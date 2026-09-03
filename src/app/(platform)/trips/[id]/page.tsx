@@ -201,9 +201,9 @@ export default function TripDetailsPage() {
         )}
 
         {/* Header - Trip Details */}
-        <div className="relative overflow-hidden rounded-3xl bg-white/10 backdrop-blur-xl border border-white/10 shadow-2xl">
-          <div className="relative h-80 w-full overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/40 to-slate-900 z-10"></div>
+        <div className="relative overflow-hidden rounded-3xl bg-slate-900 border border-slate-700 shadow-2xl flex flex-col">
+          <div className="relative h-72 w-full overflow-hidden shrink-0">
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-900/60 z-10 pointer-events-none"></div>
             <img src={trip.imageUrl} alt={trip.title} className="object-cover w-full h-full" />
             
             <button onClick={() => router.push('/trips')} className="absolute top-6 left-6 z-20 bg-black/40 hover:bg-black/60 p-2 rounded-full backdrop-blur-md transition">
@@ -214,15 +214,15 @@ export default function TripDetailsPage() {
 
             {isAdmin && (
               <div className="absolute top-6 right-6 z-20 flex flex-col items-end gap-2">
-                <div className="flex items-center gap-2 bg-emerald-500/80 px-3 py-1 rounded-full border border-emerald-400 backdrop-blur-md">
+                <div className="flex items-center gap-2 bg-emerald-500/90 px-3 py-1 rounded-full border border-emerald-400 shadow-lg">
                   <span className="text-xs font-bold text-white uppercase tracking-wider">Admin Mode</span>
                 </div>
                 <button 
                   onClick={handleToggleRegistration}
-                  className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-md border shadow-lg transition-colors ${
+                  className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider border shadow-lg transition-colors ${
                     regStatus === 'closed'
-                      ? 'bg-amber-500/90 text-white border-amber-500 hover:bg-amber-600'
-                      : 'bg-green-500/90 text-white border-green-500 hover:bg-green-600'
+                      ? 'bg-amber-500/90 text-white border-amber-400 hover:bg-amber-500'
+                      : 'bg-green-500/90 text-white border-green-400 hover:bg-green-500'
                   }`}
                 >
                   {regStatus === 'closed' ? 'Make Registration Live' : 'Close Registration'}
@@ -231,11 +231,11 @@ export default function TripDetailsPage() {
             )}
           </div>
           
-          <div className="p-8 relative z-20 -mt-20">
+          <div className="p-8 relative z-20 flex-1 flex flex-col bg-slate-900">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
                 <div className="flex items-center gap-4 mb-4">
-                  <h1 className="text-4xl md:text-5xl font-extrabold text-white drop-shadow-lg capitalize">{trip.title}</h1>
+                  <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight capitalize">{trip.title}</h1>
                   <span className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border flex items-center gap-2 ${
                     regStatus === 'closed'
                       ? 'bg-red-500/10 text-red-400 border-red-500/20'
