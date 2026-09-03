@@ -47,6 +47,7 @@ export default function Navbar() {
 
   const navLinks = [
     { name: "Home", href: "/" },
+    { name: "About", href: "/about" },
     { name: "Upcoming Trips", href: "/trips" },
     { name: "Live Map", href: "/live" },
     { name: "Parents", href: "/parents" },

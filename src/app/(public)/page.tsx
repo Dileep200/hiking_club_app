@@ -1,12 +1,11 @@
-﻿"use client";
+"use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, Map, Calendar, Users, Activity, Plus, Trash2, Edit2, MapPin } from "lucide-react";
+import { ArrowRight, Map, Calendar, Users, Activity } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
-import LiveTrekTracker from "@/components/LiveTrekTracker";
 
 export default function Home() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -14,13 +13,6 @@ export default function Home() {
   const [nextTrip, setNextTrip] = useState<any>(null);
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0 });
   const [isRegOpen, setIsRegOpen] = useState(true);
-  const [aboutSections, setAboutSections] = useState<any[]>([]);
-  const [isEditingAbout, setIsEditingAbout] = useState(false);
-  const [editingAboutId, setEditingAboutId] = useState<number | null>(null);
-  const [newAboutTitle, setNewAboutTitle] = useState("");
-  const [newAboutContent, setNewAboutContent] = useState("");
-  const [newAboutImage, setNewAboutImage] = useState("");
-
   const supabase = createClient();
 
   useEffect(() => {
@@ -33,15 +25,6 @@ export default function Home() {
       
       const { data: contactData } = await supabase.from('club_settings').select('value').eq('key', 'contact_url').single();
       if (contactData) setContactUrl(contactData.value);
-
-      const { data: aboutData } = await supabase.from('club_settings').select('value').eq('key', 'about_sections').single();
-      if (aboutData && aboutData.value) {
-        try {
-          setAboutSections(JSON.parse(aboutData.value));
-        } catch (e) {
-          console.error(e);
-        }
-      }
 
       // Fetch next adventure
       const today = new Date().toISOString().split('T')[0];
@@ -91,48 +74,6 @@ export default function Home() {
     else alert("Error updating contact URL");
   };
 
-  const saveAboutSections = async (newSections: any[]) => {
-    const { error } = await supabase.from('club_settings').upsert({ key: 'about_sections', value: JSON.stringify(newSections) });
-    if (!error) setAboutSections(newSections);
-    else alert("Error saving about sections");
-  };
-
-  const handleSaveAbout = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newAboutTitle && !newAboutContent && !newAboutImage) return;
-
-    let newSections = [...aboutSections];
-    if (editingAboutId !== null) {
-      newSections = newSections.map(s => s.id === editingAboutId ? { ...s, title: newAboutTitle, content: newAboutContent, image_url: newAboutImage } : s);
-    } else {
-      newSections.push({ id: Date.now(), title: newAboutTitle, content: newAboutContent, image_url: newAboutImage });
-    }
-    
-    await saveAboutSections(newSections);
-    setNewAboutTitle("");
-    setNewAboutContent("");
-    setNewAboutImage("");
-    setEditingAboutId(null);
-    setIsEditingAbout(false);
-  };
-
-  const handleDeleteAbout = async (id: number) => {
-    if (!confirm("Delete this section?")) return;
-    const newSections = aboutSections.filter(s => s.id !== id);
-    await saveAboutSections(newSections);
-  };
-
-  const handleEditAbout = (section: any) => {
-    setEditingAboutId(section.id);
-    setNewAboutTitle(section.title || "");
-    setNewAboutContent(section.content || "");
-    setNewAboutImage(section.image_url || "");
-    setIsEditingAbout(true);
-    setTimeout(() => {
-      document.getElementById('about-form')?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
-  };
-
   return (
     <main className="min-h-screen bg-transparent">
       {/* Hero Section */}
@@ -157,185 +98,85 @@ export default function Home() {
               UNIVERSITY HIKING CLUB
             </span>
           </motion.div>
-
+          
           <motion.h1 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, ease: "easeOut" }}
-            className="text-6xl md:text-8xl lg:text-9xl font-black text-white mb-6 tracking-tighter drop-shadow-2xl"
+            className="heading-xl mb-6"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
           >
-            CONQUER<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">THE PEAKS</span>
+            Explore Beyond <br /> Boundaries.
           </motion.h1>
-
+          
           <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1, delay: 0.4 }}
-            className="text-xl md:text-2xl text-slate-300 max-w-2xl mx-auto mb-10 font-medium tracking-wide drop-shadow-md"
-          >
-            Join a community of adventurers exploring the most breathtaking trails across the state.
-          </motion.p>
-
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
+            className="mt-4 text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto font-light mb-10"
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.6 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center"
           >
-            <Link href="/trips">
-              <button className="px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-white rounded-full font-bold uppercase tracking-wider transition-all transform hover:-translate-y-1 shadow-[0_0_40px_rgba(16,185,129,0.4)] hover:shadow-[0_0_60px_rgba(16,185,129,0.6)] flex items-center gap-2 mx-auto">
-                Discover Trips <ArrowRight className="w-5 h-5" />
-              </button>
+            Discover trails. Build memories. Conquer heights. <br className="hidden md:block"/>
+            Join the most adventurous community on campus.
+          </motion.p>
+          
+          <motion.div 
+            className="flex flex-col sm:flex-row items-center justify-center gap-4"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.8 }}
+          >
+            <Link href="/register" className="w-full sm:w-auto px-8 py-4 bg-sunset-orange hover:bg-sunset-amber text-white rounded-full font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-lg shadow-sunset-orange/20 hover:scale-105">
+              Join the Adventure <ArrowRight className="h-5 w-5" />
             </Link>
+            <Link href="/live" className="w-full sm:w-auto px-8 py-4 glass hover:bg-white/10 text-white rounded-full font-bold transition-all duration-300 flex items-center justify-center gap-2 hover:scale-105">
+              <Activity className="h-5 w-5 text-green-400" /> Track Live Hike
+            </Link>
+            <div className="relative group w-full sm:w-auto">
+              <a href={contactUrl || '#'} className="w-full sm:w-auto px-8 py-4 glass hover:bg-white/10 text-white rounded-full font-bold transition-all duration-300 flex items-center justify-center gap-2 hover:scale-105">
+                Contact Us
+              </a>
+              {isAdmin && (
+                <button onClick={() => {
+                  const newUrl = prompt("Enter new Contact URL:", contactUrl);
+                  if (newUrl !== null) handleUpdateContact(newUrl);
+                }} className="absolute -top-3 -right-3 bg-slate-800 text-white text-xs px-2 py-1 rounded-full border border-white/20 opacity-0 group-hover:opacity-100 transition-opacity">
+                  Edit
+                </button>
+              )}
+            </div>
           </motion.div>
         </div>
 
         {/* Scroll Indicator */}
         <motion.div 
-          animate={{ y: [0, 10, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-10 left-1/2 -translate-x-1/2 text-white/50 flex flex-col items-center"
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 1.5 }}
         >
-          <span className="text-xs uppercase tracking-widest mb-2 font-semibold">Scroll to explore</span>
-          <div className="w-0.5 h-12 bg-gradient-to-b from-white/50 to-transparent rounded-full"></div>
+          <span className="text-xs tracking-widest text-gray-400 uppercase mb-2">Scroll</span>
+          <motion.div 
+            className="w-1 h-12 bg-white/20 rounded-full overflow-hidden"
+          >
+            <motion.div 
+              className="w-full bg-sunset-orange"
+              initial={{ height: "0%" }}
+              animate={{ height: "100%" }}
+              transition={{ repeat: Infinity, duration: 1.5, ease: "circInOut" }}
+            />
+          </motion.div>
         </motion.div>
       </section>
 
-      {/* About Section */}
-      <section className="py-24 relative bg-dark-charcoal">
+      {/* Featured Next Hike Section */}
+      <section className="py-24 relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 mb-4 tracking-tight">About Our Club</h2>
-            <p className="text-slate-400 text-lg max-w-2xl mx-auto">Discover our story, mission, and the amazing people behind the University Hiking Club.</p>
-          </div>
-
-          <div className="space-y-16">
-            {aboutSections.length === 0 && !isAdmin ? (
-              <p className="text-center text-slate-500 italic">No about information available.</p>
-            ) : (
-              aboutSections.map((section, index) => (
-                <div key={section.id} className={`flex flex-col md:flex-row gap-8 items-center ${index % 2 !== 0 ? 'md:flex-row-reverse' : ''}`}>
-                  {section.image_url && (
-                    <div className="w-full md:w-1/2">
-                      <div className="relative h-80 rounded-3xl overflow-hidden shadow-2xl border border-white/10 group">
-                        <img src={section.image_url} alt={section.title || 'About Image'} className="object-cover w-full h-full transform group-hover:scale-105 transition-transform duration-700 ease-out" />
-                      </div>
-                    </div>
-                  )}
-                  <div className={`w-full ${section.image_url ? 'md:w-1/2' : ''}`}>
-                    {section.title && <h3 className="text-3xl font-bold text-white mb-4">{section.title}</h3>}
-                    {section.content && <p className="text-slate-300 text-lg leading-relaxed whitespace-pre-wrap">{section.content}</p>}
-                    
-                    {isAdmin && (
-                      <div className="mt-6 flex gap-3">
-                        <button onClick={() => handleEditAbout(section)} className="px-4 py-2 bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500 hover:text-white rounded-lg text-sm font-bold uppercase border border-cyan-500/50 flex items-center gap-2 transition-colors">
-                          <Edit2 className="w-4 h-4" /> Edit
-                        </button>
-                        <button onClick={() => handleDeleteAbout(section.id)} className="px-4 py-2 bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white rounded-lg text-sm font-bold uppercase border border-red-500/50 flex items-center gap-2 transition-colors">
-                          <Trash2 className="w-4 h-4" /> Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          {isAdmin && (
-            <div className="mt-16 text-center">
-              {!isEditingAbout ? (
-                <button 
-                  onClick={() => setIsEditingAbout(true)}
-                  className="px-6 py-3 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white rounded-xl text-sm font-bold uppercase tracking-wider border border-emerald-500/50 flex items-center gap-2 mx-auto transition-colors shadow-lg"
-                >
-                  <Plus className="w-5 h-5" /> Add About Section
-                </button>
-              ) : (
-                <div id="about-form" className="bg-slate-800/80 backdrop-blur-xl p-8 rounded-3xl border border-white/10 text-left max-w-3xl mx-auto shadow-2xl mt-8">
-                  <h3 className="text-2xl font-bold text-white mb-6">{editingAboutId ? 'Edit About Section' : 'Add New About Section'}</h3>
-                  <form onSubmit={handleSaveAbout} className="space-y-5">
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-300 mb-2">Section Title (Optional)</label>
-                      <input 
-                        type="text" 
-                        value={newAboutTitle} 
-                        onChange={e => setNewAboutTitle(e.target.value)} 
-                        className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all outline-none"
-                        placeholder="e.g. Our Mission"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-300 mb-2">Content (Optional)</label>
-                      <textarea 
-                        value={newAboutContent} 
-                        onChange={e => setNewAboutContent(e.target.value)} 
-                        rows={4}
-                        className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all outline-none"
-                        placeholder="Enter the text content here..."
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-300 mb-2">Image URL (Optional)</label>
-                      <input 
-                        type="text" 
-                        value={newAboutImage} 
-                        onChange={e => setNewAboutImage(e.target.value)} 
-                        className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all outline-none"
-                        placeholder="e.g. https://images.unsplash.com/photo-..."
-                      />
-                    </div>
-                    <div className="flex gap-4 pt-4">
-                      <button type="button" onClick={() => { setIsEditingAbout(false); setEditingAboutId(null); setNewAboutTitle(""); setNewAboutContent(""); setNewAboutImage(""); }} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3.5 rounded-xl transition-colors">
-                        Cancel
-                      </button>
-                      <button type="submit" className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-white font-bold py-3.5 rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-colors">
-                        Save Section
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Live Trek Tracking Section */}
-      <section className="py-24 relative overflow-hidden bg-slate-900">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-500 via-slate-900 to-slate-900 pointer-events-none"></div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight flex items-center justify-center gap-4">
-              <MapPin className="w-10 h-10 text-emerald-400 animate-bounce" />
-              Live Trek Tracking
-            </h2>
-            <p className="text-slate-400 text-lg max-w-2xl mx-auto">Follow our active expeditions in real-time. Parents and members can view the live progress of current treks.</p>
-          </div>
-          
-          <div className="rounded-3xl overflow-hidden border border-white/10 shadow-[0_0_50px_rgba(16,185,129,0.15)] bg-slate-800">
-            <LiveTrekTracker allowAdmin={true} />
-          </div>
-        </div>
-      </section>
-
-      {/* Next Adventure Showcase */}
-      <section className="py-32 relative bg-dark-charcoal">
-        <div className="absolute inset-0 bg-grid-white/[0.02] bg-[length:32px_32px]"></div>
-        
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="flex flex-col md:flex-row items-end justify-between mb-16 gap-6">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-12">
             <div>
-              <h2 className="text-4xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400">
-                The Next Adventure
-              </h2>
-              <p className="text-slate-400 mt-2 text-lg">Prepare yourself for our upcoming major expedition.</p>
+              <h2 className="heading-lg mb-2">Next Adventure</h2>
+              <p className="text-gray-400 text-lg">Don&apos;t miss out on our upcoming expedition.</p>
             </div>
-            
-            <Link href="/trips">
-              <button className="px-6 py-3 rounded-full border border-white/20 text-white hover:bg-white hover:text-slate-900 transition-all font-bold uppercase tracking-wider text-sm flex items-center gap-2">
-                View All Trips <ArrowRight className="w-4 h-4" />
-              </button>
+            <Link href="/trips" className="mt-4 md:mt-0 flex items-center gap-2 text-sunset-amber hover:text-sunset-orange transition-colors">
+              View All Trips <ArrowRight className="h-5 w-5" />
             </Link>
           </div>
 
@@ -397,7 +238,7 @@ export default function Home() {
                 <div className="max-w-5xl w-full">
                   <motion.h3 
                     initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-                    className="text-5xl md:text-6xl lg:text-7xl font-black text-white mb-6 drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)] tracking-tight leading-tight capitalize"
+                    className="text-5xl md:text-6xl lg:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-400 mb-6 drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)] tracking-tight leading-tight"
                   >
                     {nextTrip.title}
                   </motion.h3>
@@ -406,43 +247,57 @@ export default function Home() {
                     initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ delay: 0.3 }}
                     className="text-lg md:text-xl text-slate-300 mb-10 max-w-2xl font-medium leading-relaxed drop-shadow-md border-l-4 border-sunset-orange pl-6"
                   >
-                    {nextTrip.details || 'Join us for an unforgettable experience in the wild. Push your limits and discover breathtaking landscapes.'}
+                    {nextTrip.details || `Get ready for our next adventure! Explore nature, conquer new heights, and build unforgettable memories with the club.`}
                   </motion.p>
 
                   <motion.div 
-                    initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-                    className="flex flex-col lg:flex-row gap-6 lg:items-end justify-between"
+                    initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+                    className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
                   >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
-                      {/* Interactive Stat Cards */}
-                      <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 hover:bg-white/10 transition-colors group/stat">
-                        <div className="flex items-center gap-4 mb-3">
-                          <div className="p-3 bg-emerald-500/20 rounded-xl group-hover/stat:scale-110 transition-transform">
-                            <Calendar className="w-6 h-6 text-emerald-400" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Date</p>
-                            <p className="text-lg font-bold text-white">{nextTrip.date}</p>
-                          </div>
+                    {/* Stat Cards with Hover effects */}
+                    <div className="bg-white/5 backdrop-blur-md border border-white/10 p-5 rounded-2xl flex flex-col group/stat hover:bg-white/10 hover:border-white/20 transition-all duration-300">
+                      <span className="text-emerald-400 mb-3 group-hover/stat:scale-110 group-hover/stat:-translate-y-1 transition-transform"><Calendar className="w-6 h-6"/></span>
+                      <span className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Date</span>
+                      <span className="text-white font-black text-lg md:text-xl">{new Date(nextTrip.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                    </div>
+                    
+                    <div className="bg-white/5 backdrop-blur-md border border-white/10 p-5 rounded-2xl flex flex-col group/stat hover:bg-white/10 hover:border-white/20 transition-all duration-300">
+                      <span className="text-cyan-400 mb-3 group-hover/stat:scale-110 group-hover/stat:-translate-y-1 transition-transform"><Map className="w-6 h-6"/></span>
+                      <span className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Distance</span>
+                      <span className="text-white font-black text-lg md:text-xl">{nextTrip.distance}</span>
+                    </div>
+                    
+                    <div className="bg-white/5 backdrop-blur-md border border-white/10 p-5 rounded-2xl flex flex-col group/stat hover:bg-white/10 hover:border-white/20 transition-all duration-300">
+                      <span className="text-sunset-amber mb-3 group-hover/stat:scale-110 group-hover/stat:-translate-y-1 transition-transform"><Users className="w-6 h-6"/></span>
+                      <span className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Est. Budget</span>
+                      <span className="text-white font-black text-lg md:text-xl">{nextTrip.budget || 'TBA'}</span>
+                    </div>
+                    
+                    {/* Countdown Glass Element */}
+                    <div className="bg-gradient-to-br from-sunset-orange/20 to-slate-900/50 backdrop-blur-md border border-sunset-orange/30 p-5 rounded-2xl flex flex-col justify-center relative overflow-hidden group/time">
+                      <div className="absolute -right-6 -top-6 w-24 h-24 bg-sunset-orange/30 blur-3xl rounded-full group-hover/time:bg-sunset-orange/50 transition-colors"></div>
+                      <span className="text-xs text-sunset-orange uppercase tracking-wider font-bold mb-2">Launching In</span>
+                      <div className="flex items-center gap-3">
+                        <div className="flex flex-col items-center">
+                          <span className="text-3xl font-black text-white leading-none drop-shadow-md">{timeLeft.days}</span>
+                          <span className="text-[10px] text-slate-300 uppercase tracking-widest font-bold mt-1">Days</span>
                         </div>
-                      </div>
-
-                      <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 hover:bg-white/10 transition-colors group/stat">
-                        <div className="flex items-center gap-4 mb-3">
-                          <div className="p-3 bg-cyan-500/20 rounded-xl group-hover/stat:scale-110 transition-transform">
-                            <Map className="w-6 h-6 text-cyan-400" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Distance</p>
-                            <p className="text-lg font-bold text-white">{nextTrip.distance}</p>
-                          </div>
+                        <span className="text-3xl font-black text-white/30 mb-4">:</span>
+                        <div className="flex flex-col items-center">
+                          <span className="text-3xl font-black text-white leading-none drop-shadow-md">{timeLeft.hours}</span>
+                          <span className="text-[10px] text-slate-300 uppercase tracking-widest font-bold mt-1">Hrs</span>
                         </div>
                       </div>
                     </div>
+                  </motion.div>
 
-                    {/* Progress indicator */}
-                    <div className="w-full lg:w-72 bg-black/40 backdrop-blur-xl p-5 rounded-2xl border border-white/10 shrink-0">
-                      <div className="flex justify-between items-center mb-3">
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
+                    className="flex flex-col lg:flex-row items-center gap-6"
+                  >
+                    {/* High-Tech Progress Bar */}
+                    <div className="flex-1 w-full bg-black/50 backdrop-blur-xl border border-white/10 p-6 rounded-2xl shadow-xl">
+                      <div className="flex justify-between items-end mb-4">
                         <span className="text-sm font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
                           Spot Availability
                         </span>
