@@ -57,16 +57,17 @@ export default function TripsPage() {
   };
   
   // form state
+  const [editingTripId, setEditingTripId] = useState<string | null>(null);
   const [newTrip, setNewTrip] = useState<Partial<Trip> & { reg_status?: string }>({
     title: '', date: '', distance: '', difficulty: 'Easy', imageUrl: 'https://images.unsplash.com/photo-1519331379826-f10be5486c6f?q=80&w=800&auto=format&fit=crop',
     spots: 40, spots_filled: 0, budget: '', details: '', reg_status: 'open'
   });
 
-  const handleCreateTrip = async (e: React.FormEvent) => {
+  const handleSubmitTrip = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTrip.title || !newTrip.date || !newTrip.distance) return;
     
-    const tripToInsert = {
+    const tripData = {
       title: newTrip.title,
       date: newTrip.date,
       distance: newTrip.distance,
@@ -78,17 +79,51 @@ export default function TripsPage() {
       details: newTrip.details
     };
 
-    const { data, error } = await supabase.from('trips').insert([tripToInsert]).select();
-    if (data && data.length > 0) {
-      const createdTrip = data[0] as Trip;
-      setTrips([...trips, createdTrip]);
-      
-      // Save initial registration status
-      const initialStatus = newTrip.reg_status || 'open';
-      await supabase.from('club_settings').upsert({ key: `trip_reg_${createdTrip.id}`, value: initialStatus });
-      setRegStatuses(prev => ({ ...prev, [`trip_reg_${createdTrip.id}`]: initialStatus }));
+    if (editingTripId) {
+      // Update existing trip
+      const { data, error } = await supabase.from('trips').update(tripData).eq('id', editingTripId).select();
+      if (data && data.length > 0) {
+        const updatedTrip = data[0] as Trip;
+        setTrips(trips.map(t => t.id === editingTripId ? updatedTrip : t));
+        
+        // Update reg status if it changed
+        const updatedStatus = newTrip.reg_status || 'open';
+        await supabase.from('club_settings').upsert({ key: `trip_reg_${updatedTrip.id}`, value: updatedStatus });
+        setRegStatuses(prev => ({ ...prev, [`trip_reg_${updatedTrip.id}`]: updatedStatus }));
+      }
+      setEditingTripId(null);
+    } else {
+      // Insert new trip
+      const { data, error } = await supabase.from('trips').insert([tripData]).select();
+      if (data && data.length > 0) {
+        const createdTrip = data[0] as Trip;
+        setTrips([...trips, createdTrip]);
+        
+        // Save initial registration status
+        const initialStatus = newTrip.reg_status || 'open';
+        await supabase.from('club_settings').upsert({ key: `trip_reg_${createdTrip.id}`, value: initialStatus });
+        setRegStatuses(prev => ({ ...prev, [`trip_reg_${createdTrip.id}`]: initialStatus }));
+      }
     }
-    setNewTrip({ title: '', date: '', distance: '', difficulty: 'Easy', imageUrl: '', spots: 40, spots_filled: 0, budget: '', details: '', reg_status: 'open' });
+    
+    setNewTrip({ title: '', date: '', distance: '', difficulty: 'Easy', imageUrl: 'https://images.unsplash.com/photo-1519331379826-f10be5486c6f?q=80&w=800&auto=format&fit=crop', spots: 40, spots_filled: 0, budget: '', details: '', reg_status: 'open' });
+  };
+
+  const handleEditClick = (trip: Trip) => {
+    setEditingTripId(trip.id);
+    setNewTrip({
+      title: trip.title,
+      date: trip.date,
+      distance: trip.distance,
+      difficulty: trip.difficulty,
+      imageUrl: trip.imageUrl || trip.image_url,
+      spots: trip.spots,
+      spots_filled: trip.spots_filled,
+      budget: trip.budget,
+      details: trip.details,
+      reg_status: regStatuses[`trip_reg_${trip.id}`] || 'open'
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDeleteTrip = async (id: string) => {
@@ -224,6 +259,12 @@ export default function TripsPage() {
                           {regStatuses[`trip_reg_${trip.id}`] === 'closed' ? 'Make Registration Live' : 'Close Registration'}
                         </button>
                         <button 
+                          onClick={(e) => { e.stopPropagation(); handleEditClick(trip); }}
+                          className="px-5 py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all shadow-lg bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500 hover:text-white border border-cyan-500/50"
+                        >
+                          Edit
+                        </button>
+                        <button 
                           onClick={(e) => { e.stopPropagation(); handleDeleteTrip(trip.id); }}
                           className="px-5 py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all shadow-lg bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/50"
                         >
@@ -239,21 +280,22 @@ export default function TripsPage() {
 
           {/* Admin Create Form */}
           {isAdmin && (
-            <div className="lg:col-span-4 transition-all duration-500 ease-in-out">
-              <div className="bg-white/5 backdrop-blur-2xl border border-white/10 p-8 rounded-3xl shadow-2xl relative overflow-hidden h-full">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
-                <div className="absolute bottom-0 left-0 w-32 h-32 bg-cyan-500/20 rounded-full blur-3xl -ml-16 -mb-16 pointer-events-none"></div>
+          {/* Admin Create / Edit Form */}
+          {isAdmin && (
+            <div className="lg:col-span-4 h-fit sticky top-8">
+              <div className="relative overflow-hidden rounded-3xl bg-slate-800 border border-slate-700 shadow-2xl p-8">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none"></div>
                 
-                <h2 className="text-2xl font-bold mb-8 text-white flex items-center gap-3">
-                  <span className="p-2 bg-emerald-500/20 rounded-xl">
+                <h2 className="text-2xl font-bold mb-6 flex items-center gap-3 text-white relative z-10">
+                  <span className="bg-emerald-500/20 p-2 rounded-xl border border-emerald-500/30">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
                   </span>
-                  Create New Trip
+                  {editingTripId ? 'Edit Trip' : 'Create New Trip'}
                 </h2>
                 
-                <form onSubmit={handleCreateTrip} className="space-y-6 relative z-10">
+                <form onSubmit={handleSubmitTrip} className="space-y-6 relative z-10">
                   <div>
                     <label className="block text-sm font-semibold text-slate-300 mb-2">Trip Title</label>
                     <input 
@@ -382,12 +424,26 @@ export default function TripsPage() {
                     {newTrip.imageUrl && <img src={newTrip.imageUrl} alt="Preview" className="mt-2 h-16 w-16 object-cover rounded-xl" />}
                   </div>
 
-                  <button 
-                    type="submit"
-                    className="w-full mt-8 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-500/25 transform transition hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-emerald-500/50 active:translate-y-0"
-                  >
-                    Add Trip
-                  </button>
+                  <div className="flex gap-4 mt-8">
+                    {editingTripId && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingTripId(null);
+                          setNewTrip({ title: '', date: '', distance: '', difficulty: 'Easy', imageUrl: 'https://images.unsplash.com/photo-1519331379826-f10be5486c6f?q=80&w=800&auto=format&fit=crop', spots: 40, spots_filled: 0, budget: '', details: '', reg_status: 'open' });
+                        }}
+                        className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transform transition hover:-translate-y-1 focus:outline-none"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                    <button 
+                      type="submit"
+                      className="flex-[2] bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-500/25 transform transition hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-emerald-500/50 active:translate-y-0"
+                    >
+                      {editingTripId ? 'Save Changes' : 'Add Trip'}
+                    </button>
+                  </div>
                 </form>
               </div>
             </div>
