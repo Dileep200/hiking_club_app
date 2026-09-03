@@ -18,6 +18,7 @@ export default function TripsPage() {
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState(false);
   const [trips, setTrips] = useState<Trip[]>([]);
+  const [regStatuses, setRegStatuses] = useState<Record<string, string>>({});
   const supabase = createClient();
   
   useEffect(() => {
@@ -32,9 +33,24 @@ export default function TripsPage() {
       // Fetch trips
       const { data } = await supabase.from('trips').select('*').neq('status', 'completed');
       if (data) setTrips(data as Trip[]);
+
+      // Fetch reg statuses
+      const { data: regData } = await supabase.from('club_settings').select('*').like('key', 'trip_reg_%');
+      if (regData) {
+        const statuses: Record<string, string> = {};
+        regData.forEach(r => { statuses[r.key] = r.value; });
+        setRegStatuses(statuses);
+      }
     };
     fetchTripsAndRole();
   }, []);
+
+  const handleToggleRegistration = async (id: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'closed' ? 'open' : 'closed';
+    const key = `trip_reg_${id}`;
+    await supabase.from('club_settings').upsert({ key, value: newStatus });
+    setRegStatuses({ ...regStatuses, [key]: newStatus });
+  };
   
   // form state
   const [newTrip, setNewTrip] = useState<Partial<Trip>>({
@@ -110,12 +126,27 @@ export default function TripsPage() {
                       {trip.difficulty}
                     </span>
                     {isAdmin && (
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleDeleteTrip(trip.id); }}
-                        className="ml-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-md border shadow-lg bg-red-500/80 text-white border-red-500 hover:bg-red-600 transition-colors"
-                      >
-                        Delete
-                      </button>
+                      <>
+                        <button 
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            handleToggleRegistration(trip.id, regStatuses[`trip_reg_${trip.id}`] || 'open'); 
+                          }}
+                          className={`ml-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-md border shadow-lg transition-colors ${
+                            regStatuses[`trip_reg_${trip.id}`] === 'closed'
+                              ? 'bg-amber-500/80 text-white border-amber-500 hover:bg-amber-600'
+                              : 'bg-green-500/80 text-white border-green-500 hover:bg-green-600'
+                          }`}
+                        >
+                          {regStatuses[`trip_reg_${trip.id}`] === 'closed' ? 'Reg Closed' : 'Reg Open'}
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleDeleteTrip(trip.id); }}
+                          className="ml-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-md border shadow-lg bg-red-500/80 text-white border-red-500 hover:bg-red-600 transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>

@@ -10,6 +10,9 @@ import { createClient } from "@/utils/supabase/client";
 export default function Home() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [contactUrl, setContactUrl] = useState("mailto:hikingclub@university.edu");
+  const [nextTrip, setNextTrip] = useState<any>(null);
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0 });
+  const [isRegOpen, setIsRegOpen] = useState(true);
   const supabase = createClient();
 
   useEffect(() => {
@@ -20,11 +23,50 @@ export default function Home() {
         if (userData?.role === 'admin') setIsAdmin(true);
       }
       
-      const { data } = await supabase.from('club_settings').select('value').eq('key', 'contact_url').single();
-      if (data) setContactUrl(data.value);
+      const { data: contactData } = await supabase.from('club_settings').select('value').eq('key', 'contact_url').single();
+      if (contactData) setContactUrl(contactData.value);
+
+      // Fetch next adventure
+      const today = new Date().toISOString();
+      const { data: tripData } = await supabase.from('trips')
+        .select('*')
+        .gte('date', today)
+        .neq('status', 'cancelled')
+        .order('date', { ascending: true })
+        .limit(1)
+        .single();
+
+      if (tripData) {
+        setNextTrip(tripData);
+        updateTimeLeft(tripData.date);
+
+        // Fetch reg status
+        const { data: regData } = await supabase.from('club_settings').select('value').eq('key', `trip_reg_${tripData.id}`).single();
+        if (regData && regData.value === 'closed') {
+          setIsRegOpen(false);
+        }
+      }
     }
     loadData();
-  }, []);
+
+    // Setup timer to update every hour
+    const timer = setInterval(() => {
+      if (nextTrip) updateTimeLeft(nextTrip.date);
+    }, 1000 * 60 * 60);
+
+    return () => clearInterval(timer);
+  }, [nextTrip?.date]); // Include nextTrip.date in dependency to keep the interval fresh
+
+  const updateTimeLeft = (dateString: string) => {
+    const tripDate = new Date(dateString);
+    const now = new Date();
+    const diffTime = tripDate.getTime() - now.getTime();
+    if (diffTime > 0) {
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      const diffHours = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      setTimeLeft({ days: diffDays, hours: diffHours });
+    }
+  };
 
   const handleUpdateContact = async (newUrl: string) => {
     const { error } = await supabase.from('club_settings').upsert({ key: 'contact_url', value: newUrl });
@@ -138,78 +180,85 @@ export default function Home() {
             </Link>
           </div>
 
-          <motion.div 
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="glass-dark rounded-3xl p-1 overflow-hidden relative group"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-forest-green/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-            <div className="flex flex-col lg:flex-row relative z-10">
-              <div className="lg:w-2/5 relative min-h-[300px] lg:min-h-[400px] rounded-2xl overflow-hidden m-2">
-                <Image 
-                  src="https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=3540&auto=format&fit=crop" 
-                  alt="Trek destination"
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 40vw"
-                  className="object-cover group-hover:scale-105 transition-transform duration-700"
-                />
-                <div className="absolute top-4 left-4 glass px-3 py-1 rounded-full flex items-center gap-2">
-                  <span className="relative flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                  </span>
-                  <span className="text-xs font-bold text-white uppercase tracking-wider">Registration Open</span>
-                </div>
-              </div>
-              
-              <div className="lg:w-3/5 p-8 lg:p-12 flex flex-col justify-between">
-                <div>
-                  <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">Maredumilli Monsoon Trek</h3>
-                  <p className="text-gray-300 mb-8 max-w-xl">
-                    Experience the dense forests, waterfalls, and pristine nature of the Eastern Ghats. This moderate trek is perfect for all skill levels and includes overnight camping.
-                  </p>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-                    <div className="flex flex-col">
-                      <span className="text-gray-400 text-sm mb-1 flex items-center gap-1"><Calendar className="h-4 w-4"/> Date</span>
-                      <span className="text-white font-semibold">Oct 12 - 14</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-gray-400 text-sm mb-1 flex items-center gap-1"><Map className="h-4 w-4"/> Distance</span>
-                      <span className="text-white font-semibold">18 km</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-gray-400 text-sm mb-1 flex items-center gap-1"><Activity className="h-4 w-4"/> Difficulty</span>
-                      <span className="text-sunset-amber font-semibold">Moderate</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-gray-400 text-sm mb-1 flex items-center gap-1"><Users className="h-4 w-4"/> Spots</span>
-                      <span className="text-white font-semibold">12 / 40 Left</span>
-                    </div>
+          {nextTrip ? (
+            <motion.div 
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="glass-dark rounded-3xl p-1 overflow-hidden relative group"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-forest-green/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+              <div className="flex flex-col lg:flex-row relative z-10">
+                <div className="lg:w-2/5 relative min-h-[300px] lg:min-h-[400px] rounded-2xl overflow-hidden m-2">
+                  <Image 
+                    src={nextTrip.image_url || "https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=3540&auto=format&fit=crop"} 
+                    alt={nextTrip.title}
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 40vw"
+                    className="object-cover group-hover:scale-105 transition-transform duration-700"
+                  />
+                  <div className={`absolute top-4 left-4 glass px-3 py-1 rounded-full flex items-center gap-2 ${!isRegOpen ? 'opacity-80' : ''}`}>
+                    <span className="relative flex h-3 w-3">
+                      {isRegOpen && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>}
+                      <span className={`relative inline-flex rounded-full h-3 w-3 ${isRegOpen ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                    </span>
+                    <span className="text-xs font-bold text-white uppercase tracking-wider">
+                      {isRegOpen ? 'Registration Open' : 'Registration Closed'}
+                    </span>
                   </div>
                 </div>
                 
-                <div className="flex flex-col sm:flex-row items-center gap-4 mt-auto">
-                  <div className="glass px-6 py-3 rounded-xl flex items-center gap-4 w-full sm:w-auto">
-                    <div className="text-center">
-                      <span className="block text-2xl font-bold text-white">14</span>
-                      <span className="text-xs text-gray-400 uppercase">Days</span>
-                    </div>
-                    <div className="w-px h-8 bg-white/20"></div>
-                    <div className="text-center">
-                      <span className="block text-2xl font-bold text-white">08</span>
-                      <span className="text-xs text-gray-400 uppercase">Hrs</span>
+                <div className="lg:w-3/5 p-8 lg:p-12 flex flex-col justify-between">
+                  <div>
+                    <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">{nextTrip.title}</h3>
+                    <p className="text-gray-300 mb-8 max-w-xl">
+                      Get ready for our next adventure! This {nextTrip.difficulty.toLowerCase()} trek is perfect for hikers looking to explore nature. Distance is approximately {nextTrip.distance}.
+                    </p>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-8">
+                      <div className="flex flex-col">
+                        <span className="text-gray-400 text-sm mb-1 flex items-center gap-1"><Calendar className="h-4 w-4"/> Date</span>
+                        <span className="text-white font-semibold">
+                          {new Date(nextTrip.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-gray-400 text-sm mb-1 flex items-center gap-1"><Map className="h-4 w-4"/> Distance</span>
+                        <span className="text-white font-semibold">{nextTrip.distance}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-gray-400 text-sm mb-1 flex items-center gap-1"><Activity className="h-4 w-4"/> Difficulty</span>
+                        <span className="text-sunset-amber font-semibold">{nextTrip.difficulty}</span>
+                      </div>
                     </div>
                   </div>
-                  <Link href="/trips/maredumilli" className="w-full sm:w-auto px-8 py-4 bg-white text-dark-charcoal hover:bg-gray-200 rounded-xl font-bold transition-colors text-center">
-                    View Trip Details
-                  </Link>
+                  
+                  <div className="flex flex-col sm:flex-row items-center gap-4 mt-auto">
+                    <div className="glass px-6 py-3 rounded-xl flex items-center gap-4 w-full sm:w-auto">
+                      <div className="text-center">
+                        <span className="block text-2xl font-bold text-white">{timeLeft.days}</span>
+                        <span className="text-xs text-gray-400 uppercase">Days</span>
+                      </div>
+                      <div className="w-px h-8 bg-white/20"></div>
+                      <div className="text-center">
+                        <span className="block text-2xl font-bold text-white">{timeLeft.hours}</span>
+                        <span className="text-xs text-gray-400 uppercase">Hrs</span>
+                      </div>
+                    </div>
+                    <Link href={`/trips/${nextTrip.id}`} className="w-full sm:w-auto px-8 py-4 bg-white text-dark-charcoal hover:bg-gray-200 rounded-xl font-bold transition-colors text-center">
+                      View Trip Details
+                    </Link>
+                  </div>
                 </div>
               </div>
+            </motion.div>
+          ) : (
+            <div className="glass-dark rounded-3xl p-12 text-center">
+              <h3 className="text-2xl font-bold text-white mb-4">More Adventures Coming Soon</h3>
+              <p className="text-gray-400">We are currently planning our next exciting trips. Check back later!</p>
             </div>
-          </motion.div>
+          )}
         </div>
       </section>
     </main>
