@@ -1,13 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { Compass, Menu, X, User } from "lucide-react";
+import { Compass, Menu, X, User, LogOut, LayoutDashboard } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { createClient } from "@/utils/supabase/client";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [session, setSession] = useState<any>(null);
+  
+  const supabase = createClient();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,6 +25,25 @@ export default function Navbar() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase.auth]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setSession(null);
+  };
 
   const navLinks = [
     { name: "Home", href: "/" },
@@ -56,13 +79,33 @@ export default function Navbar() {
                 {link.name}
               </Link>
             ))}
-            <Link
-              href="/login"
-              className="flex items-center space-x-1 glass px-4 py-2 rounded-full hover:bg-white/10 transition-colors"
-            >
-              <User className="h-4 w-4" />
-              <span>Login</span>
-            </Link>
+            
+            {!session ? (
+              <Link
+                href="/login"
+                className="flex items-center space-x-1 glass px-4 py-2 rounded-full hover:bg-white/10 transition-colors"
+              >
+                <User className="h-4 w-4" />
+                <span>Login</span>
+              </Link>
+            ) : (
+              <div className="flex items-center space-x-4">
+                <Link
+                  href="/dashboard"
+                  className="flex items-center space-x-1 glass px-4 py-2 rounded-full hover:bg-white/10 transition-colors text-cyan-400 border-cyan-500/30"
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  <span>Dashboard</span>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center space-x-1 glass px-4 py-2 rounded-full hover:bg-red-500/20 hover:text-red-400 transition-colors border-red-500/30 text-red-300"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -97,14 +140,38 @@ export default function Navbar() {
                   {link.name}
                 </Link>
               ))}
-              <Link
-                href="/login"
-                className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-sunset-amber hover:text-sunset-orange"
-                onClick={() => setIsOpen(false)}
-              >
-                <User className="h-5 w-5" />
-                <span>Login</span>
-              </Link>
+              
+              {!session ? (
+                <Link
+                  href="/login"
+                  className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-sunset-amber hover:text-sunset-orange"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <User className="h-5 w-5" />
+                  <span>Login</span>
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/dashboard"
+                    className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-cyan-400 hover:text-cyan-300"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <LayoutDashboard className="h-5 w-5" />
+                    <span>Dashboard</span>
+                  </Link>
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setIsOpen(false);
+                    }}
+                    className="w-full flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-red-400 hover:text-red-300"
+                  >
+                    <LogOut className="h-5 w-5" />
+                    <span>Logout</span>
+                  </button>
+                </>
+              )}
             </div>
           </motion.div>
         )}
