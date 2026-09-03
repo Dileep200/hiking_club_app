@@ -57,9 +57,9 @@ export default function TripsPage() {
   };
   
   // form state
-  const [newTrip, setNewTrip] = useState<Partial<Trip>>({
+  const [newTrip, setNewTrip] = useState<Partial<Trip> & { reg_status?: string }>({
     title: '', date: '', distance: '', difficulty: 'Easy', imageUrl: 'https://images.unsplash.com/photo-1519331379826-f10be5486c6f?q=80&w=800&auto=format&fit=crop',
-    spots: 40, spots_filled: 0, budget: '', details: ''
+    spots: 40, spots_filled: 0, budget: '', details: '', reg_status: 'open'
   });
 
   const handleCreateTrip = async (e: React.FormEvent) => {
@@ -80,9 +80,15 @@ export default function TripsPage() {
 
     const { data, error } = await supabase.from('trips').insert([tripToInsert]).select();
     if (data && data.length > 0) {
-      setTrips([...trips, data[0] as Trip]);
+      const createdTrip = data[0] as Trip;
+      setTrips([...trips, createdTrip]);
+      
+      // Save initial registration status
+      const initialStatus = newTrip.reg_status || 'open';
+      await supabase.from('club_settings').upsert({ key: `trip_reg_${createdTrip.id}`, value: initialStatus });
+      setRegStatuses(prev => ({ ...prev, [`trip_reg_${createdTrip.id}`]: initialStatus }));
     }
-    setNewTrip({ title: '', date: '', distance: '', difficulty: 'Easy', imageUrl: '' });
+    setNewTrip({ title: '', date: '', distance: '', difficulty: 'Easy', imageUrl: '', spots: 40, spots_filled: 0, budget: '', details: '', reg_status: 'open' });
   };
 
   const handleDeleteTrip = async (id: string) => {
@@ -322,22 +328,39 @@ export default function TripsPage() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-300 mb-2">Difficulty</label>
-                    <div className="relative">
-                      <select 
-                        value={newTrip.difficulty}
-                        onChange={e => setNewTrip({...newTrip, difficulty: e.target.value as any})}
-                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all appearance-none shadow-inner cursor-pointer"
-                      >
-                        <option className="bg-slate-800 text-white" value="Easy">Easy</option>
-                        <option className="bg-slate-800 text-white" value="Moderate">Moderate</option>
-                        <option className="bg-slate-800 text-white" value="Hard">Hard</option>
-                      </select>
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                        </svg>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-300 mb-2">Difficulty</label>
+                      <div className="relative">
+                        <select 
+                          value={newTrip.difficulty}
+                          onChange={e => setNewTrip({...newTrip, difficulty: e.target.value as any})}
+                          className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all shadow-inner appearance-none"
+                        >
+                          <option value="Easy">Easy</option>
+                          <option value="Moderate">Moderate</option>
+                          <option value="Hard">Hard</option>
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-300 mb-2">Registration Status</label>
+                      <div className="relative">
+                        <select 
+                          value={newTrip.reg_status || 'open'}
+                          onChange={e => setNewTrip({...newTrip, reg_status: e.target.value})}
+                          className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all shadow-inner appearance-none"
+                        >
+                          <option value="open">Live (Open)</option>
+                          <option value="closed">Closed</option>
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
                       </div>
                     </div>
                   </div>
