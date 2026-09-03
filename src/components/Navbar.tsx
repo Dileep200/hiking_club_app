@@ -49,6 +49,7 @@ export default function Navbar() {
     { name: "Home", href: "/" },
     { name: "Upcoming Trips", href: "/trips" },
     { name: "Live Map", href: "/live" },
+    { name: "Parents", href: "/parents" },
     { name: "Gallery", href: "/gallery" },
     { name: "Core Team", href: "/team" },
   ];
