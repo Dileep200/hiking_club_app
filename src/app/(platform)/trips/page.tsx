@@ -269,12 +269,11 @@ export default function TripsPage() {
                   <div>
                     <label className="block text-sm font-semibold text-slate-300 mb-2">Date</label>
                     <input 
-                      type="text" 
+                      type="date" 
                       required
                       value={newTrip.date}
                       onChange={e => setNewTrip({...newTrip, date: e.target.value})}
                       className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all shadow-inner"
-                      placeholder="e.g. Jan 15, 2027"
                     />
                   </div>
 

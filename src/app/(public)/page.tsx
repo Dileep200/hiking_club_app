@@ -27,7 +27,7 @@ export default function Home() {
       if (contactData) setContactUrl(contactData.value);
 
       // Fetch next adventure
-      const today = new Date().toISOString();
+      const today = new Date().toISOString().split('T')[0];
       const { data: tripData } = await supabase.from('trips')
         .select('*')
         .gte('date', today)
