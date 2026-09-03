@@ -134,29 +134,6 @@ export default function TripsPage() {
                     }`}>
                       {trip.difficulty}
                     </span>
-                    {isAdmin && (
-                      <>
-                        <button 
-                          onClick={(e) => { 
-                            e.stopPropagation(); 
-                            handleToggleRegistration(trip.id, regStatuses[`trip_reg_${trip.id}`] || 'open'); 
-                          }}
-                          className={`ml-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-md border shadow-lg transition-colors ${
-                            regStatuses[`trip_reg_${trip.id}`] === 'closed'
-                              ? 'bg-amber-500/80 text-white border-amber-500 hover:bg-amber-600'
-                              : 'bg-green-500/80 text-white border-green-500 hover:bg-green-600'
-                          }`}
-                        >
-                          {regStatuses[`trip_reg_${trip.id}`] === 'closed' ? 'Reg Closed' : 'Reg Open'}
-                        </button>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handleDeleteTrip(trip.id); }}
-                          className="ml-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-md border shadow-lg bg-red-500/80 text-white border-red-500 hover:bg-red-600 transition-colors"
-                        >
-                          Delete
-                        </button>
-                      </>
-                    )}
                   </div>
                 </div>
                 
@@ -220,6 +197,33 @@ export default function TripsPage() {
                   {trip.details && (
                     <div className="mt-4 pt-4 border-t border-white/10">
                       <p className="text-sm text-slate-400 line-clamp-2">{trip.details}</p>
+                    </div>
+                  )}
+
+                  {isAdmin && (
+                    <div className="mt-6 pt-4 border-t border-white/10 flex flex-col gap-3">
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Admin Controls</p>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            handleToggleRegistration(trip.id, regStatuses[`trip_reg_${trip.id}`] || 'open'); 
+                          }}
+                          className={`flex-1 py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all shadow-lg ${
+                            regStatuses[`trip_reg_${trip.id}`] === 'closed'
+                              ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20'
+                              : 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20'
+                          }`}
+                        >
+                          {regStatuses[`trip_reg_${trip.id}`] === 'closed' ? 'Make Registration Live' : 'Close Registration'}
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleDeleteTrip(trip.id); }}
+                          className="px-5 py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all shadow-lg bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/50"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
