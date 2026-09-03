@@ -38,6 +38,7 @@ export default function TripDetailsPage() {
   const [trip, setTrip] = useState<Trip | null>(null);
   const [reports, setReports] = useState<TripReport[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [regStatus, setRegStatus] = useState<string>('open');
   
   const [loading, setLoading] = useState(true);
   
@@ -50,7 +51,7 @@ export default function TripDetailsPage() {
     if (!id) return;
     
     const fetchData = async () => {
-      // Check admin
+      // Check role
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         const { data: userData } = await supabase.from('users').select('role').eq('id', session.user.id).single();
@@ -60,6 +61,10 @@ export default function TripDetailsPage() {
       // Fetch trip
       const { data: tripData } = await supabase.from('trips').select('*').eq('id', id).single();
       if (tripData) setTrip(tripData);
+      
+      // Fetch reg status
+      const { data: regData } = await supabase.from('club_settings').select('value').eq('key', `trip_reg_${id}`).single();
+      if (regData) setRegStatus(regData.value);
       
       // Fetch reports
       const { data: reportsData } = await supabase.from('trip_reports').select('*').eq('trip_id', id).order('created_at', { ascending: false });
@@ -74,6 +79,13 @@ export default function TripDetailsPage() {
     
     fetchData();
   }, [id, supabase]);
+
+  const handleToggleRegistration = async () => {
+    const newStatus = regStatus === 'closed' ? 'open' : 'closed';
+    const key = `trip_reg_${id}`;
+    await supabase.from('club_settings').upsert({ key, value: newStatus });
+    setRegStatus(newStatus);
+  };
 
   const handleAddReport = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -136,8 +148,20 @@ export default function TripDetailsPage() {
             </button>
 
             {isAdmin && (
-              <div className="absolute top-6 right-6 z-20 flex items-center gap-2 bg-emerald-500/80 px-3 py-1 rounded-full border border-emerald-400 backdrop-blur-md">
-                <span className="text-xs font-bold text-white uppercase tracking-wider">Admin Mode</span>
+              <div className="absolute top-6 right-6 z-20 flex flex-col items-end gap-2">
+                <div className="flex items-center gap-2 bg-emerald-500/80 px-3 py-1 rounded-full border border-emerald-400 backdrop-blur-md">
+                  <span className="text-xs font-bold text-white uppercase tracking-wider">Admin Mode</span>
+                </div>
+                <button 
+                  onClick={handleToggleRegistration}
+                  className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-md border shadow-lg transition-colors ${
+                    regStatus === 'closed'
+                      ? 'bg-amber-500/90 text-white border-amber-500 hover:bg-amber-600'
+                      : 'bg-green-500/90 text-white border-green-500 hover:bg-green-600'
+                  }`}
+                >
+                  {regStatus === 'closed' ? 'Make Registration Live' : 'Close Registration'}
+                </button>
               </div>
             )}
           </div>
@@ -145,7 +169,25 @@ export default function TripDetailsPage() {
           <div className="p-8 relative z-20 -mt-20">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
-                <h1 className="text-4xl md:text-5xl font-extrabold text-white drop-shadow-lg mb-4">{trip.title}</h1>
+                <div className="flex items-center gap-4 mb-4">
+                  <h1 className="text-4xl md:text-5xl font-extrabold text-white drop-shadow-lg">{trip.title}</h1>
+                  <span className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border flex items-center gap-2 ${
+                    regStatus === 'closed'
+                      ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                      : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.2)]'
+                  }`}>
+                    {regStatus !== 'closed' && (
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      </span>
+                    )}
+                    {regStatus === 'closed' && (
+                      <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                    )}
+                    {regStatus === 'closed' ? 'Registration Closed' : 'Registration Live'}
+                  </span>
+                </div>
                 <div className="flex flex-wrap gap-4 text-slate-300">
                   <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg backdrop-blur-sm border border-white/5">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
