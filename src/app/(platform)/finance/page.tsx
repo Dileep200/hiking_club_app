@@ -56,6 +56,16 @@ export default function FinancePage() {
     }
   };
 
+  const handleDeleteTx = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this transaction?')) return;
+    const { error } = await supabase.from('transactions').delete().eq('id', id);
+    if (!error) {
+      setLedger(ledger.filter(t => t.id !== id));
+    } else {
+      alert("Error deleting transaction");
+    }
+  };
+
   // Calculations
   const totalIncome = ledger.filter(t => t.type === 'income').reduce((acc, curr) => acc + Number(curr.amount), 0);
   const totalExpense = ledger.filter(t => t.type === 'expense').reduce((acc, curr) => acc + Number(curr.amount), 0);
@@ -183,6 +193,11 @@ export default function FinancePage() {
                       </td>
                       <td className={`px-4 py-3 text-right font-medium ${entry.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
                         {entry.type === 'income' ? '+' : '-'}₹{Number(entry.amount).toFixed(2)}
+                        {isAdmin && (
+                          <button onClick={() => handleDeleteTx(entry.id)} className="block ml-auto mt-1 text-xs text-red-500 hover:text-red-400 transition-colors">
+                            Delete
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}

@@ -44,6 +44,16 @@ export default function HistoryPage() {
     }
   };
 
+  const handleDeleteHike = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this trip from history?')) return;
+    const { error } = await supabase.from('trips').delete().eq('id', id);
+    if (!error) {
+      setHikes(hikes.filter(h => h.id !== id));
+    } else {
+      alert("Error deleting past trip.");
+    }
+  };
+
   if (loading) return <div className="min-h-screen bg-slate-900 p-8 text-emerald-400">Loading history...</div>;
 
   return (
@@ -123,6 +133,11 @@ export default function HistoryPage() {
                         <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                         {hike.difficulty}
                       </div>
+                      {isAdmin && (
+                        <button onClick={() => handleDeleteHike(hike.id)} className="flex items-center gap-1.5 bg-red-900/50 hover:bg-red-800 px-3 py-1 rounded text-xs font-medium text-red-200 transition-colors">
+                          Delete
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

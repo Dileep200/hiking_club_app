@@ -63,6 +63,26 @@ export default function EventsPage() {
     else alert("Successfully registered!");
   };
 
+  const handleDeleteAnnouncement = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this announcement?')) return;
+    const { error } = await supabase.from('announcements').delete().eq('id', id);
+    if (!error) {
+      setAnnouncements(announcements.filter(a => a.id !== id));
+    } else {
+      alert("Error deleting announcement");
+    }
+  };
+
+  const handleDeleteEvent = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this event?')) return;
+    const { error } = await supabase.from('events').delete().eq('id', id);
+    if (!error) {
+      setEvents(events.filter(e => e.id !== id));
+    } else {
+      alert("Error deleting event");
+    }
+  };
+
   if (loading) return <div className="min-h-screen bg-slate-900 text-cyan-400 p-8">Loading events...</div>;
 
   return (
@@ -145,9 +165,13 @@ export default function EventsPage() {
                       </div>
                     </div>
                   </div>
-                  {!isAdmin && (
+                  {!isAdmin ? (
                     <button onClick={() => handleRegister(event.id)} className="w-full md:w-auto px-8 py-4 font-bold text-white bg-cyan-600 hover:bg-cyan-500 rounded-xl">
                       Register Now
+                    </button>
+                  ) : (
+                    <button onClick={() => handleDeleteEvent(event.id)} className="w-full md:w-auto px-8 py-4 font-bold text-white bg-red-600 hover:bg-red-500 rounded-xl">
+                      Delete Event
                     </button>
                   )}
                 </div>
@@ -168,8 +192,15 @@ export default function EventsPage() {
                 <div key={ann.id} className="bg-gradient-to-br from-emerald-900/30 to-slate-900/40 rounded-2xl p-6 border border-white/10">
                   <h3 className="text-xl font-bold text-emerald-300 mb-2">{ann.title}</h3>
                   <p className="text-gray-300 text-sm mb-4">{ann.content}</p>
-                  <div className="text-xs text-emerald-500/80">
-                    {new Date(ann.created_at).toLocaleDateString()}
+                  <div className="flex justify-between items-end mt-4">
+                    <div className="text-xs text-emerald-500/80">
+                      {new Date(ann.created_at).toLocaleDateString()}
+                    </div>
+                    {isAdmin && (
+                      <button onClick={() => handleDeleteAnnouncement(ann.id)} className="text-xs font-bold text-red-400 hover:text-red-300 transition-colors">
+                        Delete
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

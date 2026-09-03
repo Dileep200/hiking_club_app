@@ -97,6 +97,18 @@ export default function TripDetailsPage() {
     setNewTxAmount('');
   };
 
+  const handleDeleteReport = async (reportId: string) => {
+    if (!confirm('Delete this report?')) return;
+    const { error } = await supabase.from('trip_reports').delete().eq('id', reportId);
+    if (!error) setReports(reports.filter(r => r.id !== reportId));
+  };
+
+  const handleDeleteTx = async (txId: string) => {
+    if (!confirm('Delete this expense?')) return;
+    const { error } = await supabase.from('transactions').delete().eq('id', txId);
+    if (!error) setTransactions(transactions.filter(t => t.id !== txId));
+  };
+
   if (loading) {
     return <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center">Loading...</div>;
   }
@@ -194,8 +206,13 @@ export default function TripDetailsPage() {
                 reports.map(report => (
                   <div key={report.id} className="bg-slate-900/60 p-5 rounded-2xl border border-white/5">
                     <p className="text-slate-300 leading-relaxed whitespace-pre-wrap">{report.content}</p>
-                    <div className="mt-4 text-xs text-slate-500">
-                      {new Date(report.created_at).toLocaleDateString()}
+                    <div className="mt-4 flex justify-between items-center text-xs text-slate-500">
+                      <span>{new Date(report.created_at).toLocaleDateString()}</span>
+                      {isAdmin && (
+                        <button onClick={() => handleDeleteReport(report.id)} className="text-red-400 hover:text-red-300">
+                          Delete
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))
@@ -264,6 +281,11 @@ export default function TripDetailsPage() {
                       <p className="text-rose-400 font-bold font-mono">
                         -₹{tx.amount.toFixed(2)}
                       </p>
+                      {isAdmin && (
+                        <button onClick={() => handleDeleteTx(tx.id)} className="text-xs text-red-500 hover:text-red-400 mt-1">
+                          Delete
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}

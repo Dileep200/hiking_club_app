@@ -60,6 +60,16 @@ export default function TripsPage() {
     setNewTrip({ title: '', date: '', distance: '', difficulty: 'Easy', imageUrl: '' });
   };
 
+  const handleDeleteTrip = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this trip?')) return;
+    const { error } = await supabase.from('trips').delete().eq('id', id);
+    if (!error) {
+      setTrips(trips.filter(t => t.id !== id));
+    } else {
+      alert('Error deleting trip: ' + error.message);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-900 text-white p-8 font-sans">
       <div className="max-w-7xl mx-auto space-y-12">
@@ -99,6 +109,14 @@ export default function TripsPage() {
                     }`}>
                       {trip.difficulty}
                     </span>
+                    {isAdmin && (
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleDeleteTrip(trip.id); }}
+                        className="ml-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-md border shadow-lg bg-red-500/80 text-white border-red-500 hover:bg-red-600 transition-colors"
+                      >
+                        Delete
+                      </button>
+                    )}
                   </div>
                 </div>
                 
