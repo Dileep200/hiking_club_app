@@ -35,3 +35,22 @@ body {
     @apply text-4xl md:text-5xl font-bold tracking-tight text-off-white;
   }
 }
+/* Light Mode Overrides */
+body.light-mode {
+  --foreground-rgb: 15, 23, 42;
+  --background-start-rgb: 255, 255, 255;
+  --background-end-rgb: 240, 244, 248;
+  background-image: 
+    linear-gradient(to bottom, rgba(255,255,255,1), rgba(240,244,248,1)),
+    url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 10c10-5 20-5 30 0s20 5 30 0 20-5 30 0v80c-10 5-20 5-30 0s-20-5-30 0-20 5-30 0V10z' fill='none' stroke='rgba(0,0,0,0.03)' stroke-width='1'/%3E%3C/svg%3E");
+}
+
+body.light-mode .text-white { color: #0f172a !important; }
+body.light-mode .text-gray-400, body.light-mode .text-slate-400, body.light-mode .text-gray-300 { color: #475569 !important; }
+body.light-mode .bg-black\/20, body.light-mode .bg-black\/40, body.light-mode .bg-slate-900\/50, body.light-mode .bg-slate-900\/80 { background-color: rgba(255, 255, 255, 0.7) !important; }
+body.light-mode .bg-white\/5, body.light-mode .bg-white\/10 { background-color: rgba(255, 255, 255, 0.9) !important; }
+body.light-mode .border-white\/10, body.light-mode .border-white\/5, body.light-mode .border-white\/20 { border-color: rgba(0, 0, 0, 0.08) !important; }
+body.light-mode .glass-dark { background-color: rgba(255, 255, 255, 0.7) !important; border-color: rgba(0, 0, 0, 0.1) !important; box-shadow: 0 10px 30px rgba(0,0,0,0.05) !important; }
+body.light-mode .glass { background-color: rgba(255, 255, 255, 0.9) !important; border-color: rgba(0, 0, 0, 0.1) !important; }
+body.light-mode input, body.light-mode textarea, body.light-mode select { color: #0f172a !important; background-color: rgba(255, 255, 255, 0.9) !important; border-color: rgba(0, 0, 0, 0.1) !important; }
+body.light-mode input::placeholder, body.light-mode textarea::placeholder { color: #94a3b8 !important; }

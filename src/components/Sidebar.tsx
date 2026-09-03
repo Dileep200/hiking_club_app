@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Map, Calendar, Wallet, Users, Image as ImageIcon, History, LogOut, Navigation, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Map, Calendar, Wallet, Users, Image as ImageIcon, History, LogOut, Navigation, Menu, X, Home, Sun, Moon } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -13,6 +13,7 @@ export default function Sidebar() {
   const supabase = createClient();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isOpen, setIsOpen] = useState(false); // Mobile sidebar state
+  const [isLightMode, setIsLightMode] = useState(false);
 
   useEffect(() => {
     async function checkRole() {
@@ -23,18 +24,35 @@ export default function Sidebar() {
       }
     }
     checkRole();
+    
+    // Check saved theme
+    if (localStorage.getItem('theme') === 'light') {
+      setIsLightMode(true);
+      document.body.classList.add('light-mode');
+    }
   }, []);
 
+  const toggleTheme = () => {
+    if (isLightMode) {
+      document.body.classList.remove('light-mode');
+      localStorage.setItem('theme', 'dark');
+      setIsLightMode(false);
+    } else {
+      document.body.classList.add('light-mode');
+      localStorage.setItem('theme', 'light');
+      setIsLightMode(true);
+    }
+  };
+
   const navItems = [
+    { name: 'Home', href: '/', icon: Home, adminOnly: false },
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, adminOnly: false },
     { name: 'Trips', href: '/trips', icon: Map, adminOnly: false },
-    { name: 'Live Track', href: '/live', icon: Navigation, adminOnly: false },
     { name: 'Events', href: '/events', icon: Calendar, adminOnly: false },
-    { name: 'Team', href: '/team', icon: Users, adminOnly: false },
-    { name: 'Gallery', href: '/gallery', icon: ImageIcon, adminOnly: false },
-    { name: 'History', href: '/history', icon: History, adminOnly: false },
     { name: 'Finance', href: '/finance', icon: Wallet, adminOnly: true },
-    { name: 'Settings', href: '/settings', icon: LayoutDashboard, adminOnly: true },
+    { name: 'Core Team', href: '/team', icon: Users, adminOnly: false },
+    { name: 'Gallery', href: '/gallery', icon: ImageIcon, adminOnly: false },
+    { name: 'Past Hikes', href: '/history', icon: History, adminOnly: false },
   ];
 
   const handleLogout = async () => {
@@ -42,68 +60,67 @@ export default function Sidebar() {
     router.push('/login');
   };
 
-  const visibleNavItems = navItems.filter(item => !item.adminOnly || isAdmin);
-
   return (
     <>
-      {/* Mobile Hamburger Button */}
+      {/* Mobile Toggle */}
       <button 
-        onClick={() => setIsOpen(true)} 
-        className="md:hidden fixed top-4 left-4 z-40 p-2.5 bg-slate-800 border border-white/10 rounded-xl text-slate-300 hover:text-white shadow-lg"
+        className="md:hidden fixed top-4 right-4 z-50 p-2 glass rounded-lg text-white"
+        onClick={() => setIsOpen(!isOpen)}
       >
-        <Menu className="h-6 w-6" />
+        {isOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
-      {/* Mobile Backdrop */}
-      {isOpen && (
-        <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden" 
-          onClick={() => setIsOpen(false)} 
-        />
-      )}
+      {/* Sidebar */}
+      <div className={`fixed inset-y-0 left-0 z-40 w-64 glass-dark transform transition-transform duration-300 ease-in-out md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="h-full flex flex-col pt-20 md:pt-8 pb-4">
+          <div className="px-6 mb-8 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-emerald-500 flex items-center justify-center shadow-lg">
+              <Navigation className="text-white" size={20} />
+            </div>
+            <span className="text-xl font-bold text-white tracking-tight">Apex Club</span>
+          </div>
 
-      {/* Sidebar Content */}
-      <div className={`h-screen w-64 bg-slate-900 border-r border-white/10 flex flex-col fixed left-0 top-0 z-50 transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
-        <div className="p-6 flex justify-between items-center">
-          <h2 className="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400 flex items-center gap-2">
-            <Map className="h-6 w-6 text-emerald-400" />
-            Hiking Club
-          </h2>
-          
-          <button onClick={() => setIsOpen(false)} className="md:hidden text-slate-400 hover:text-white">
-            <X className="h-6 w-6" />
-          </button>
-        </div>
+          <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
+            {navItems.map((item) => {
+              if (item.adminOnly && !isAdmin) return null;
+              
+              const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+              const Icon = item.icon;
 
-        <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto custom-scrollbar">
-          {visibleNavItems.map((item) => {
-            const isActive = pathname.startsWith(item.href);
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                onClick={() => setIsOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-                  isActive 
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
-                    : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                }`}
-              >
-                <item.icon className="h-5 w-5" />
-                <span className="font-medium">{item.name}</span>
-              </Link>
-            );
-          })}
-        </nav>
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  onClick={() => setIsOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                    isActive 
+                      ? 'bg-gradient-to-r from-cyan-500/20 to-emerald-500/20 text-cyan-400 border border-cyan-500/30' 
+                      : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <Icon size={20} />
+                  <span className="font-medium">{item.name}</span>
+                </Link>
+              );
+            })}
+          </nav>
 
-        <div className="p-4 border-t border-white/10">
-          <button 
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-all duration-200"
-          >
-            <LogOut className="h-5 w-5" />
-            <span className="font-medium">Sign Out</span>
-          </button>
+          <div className="px-4 mt-auto pt-4 border-t border-white/10 space-y-2">
+            <button
+              onClick={toggleTheme}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200"
+            >
+              {isLightMode ? <Moon size={20} /> : <Sun size={20} />}
+              <span className="font-medium">{isLightMode ? 'Dark Mode' : 'Light Mode'}</span>
+            </button>
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all duration-200"
+            >
+              <LogOut size={20} />
+              <span className="font-medium">Logout</span>
+            </button>
+          </div>
         </div>
       </div>
     </>
