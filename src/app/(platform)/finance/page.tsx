@@ -39,8 +39,7 @@ export default function FinancePage() {
       description: newTx.description,
       amount: amount,
       type: newTx.type,
-      category: newTx.category,
-      date: new Date().toISOString().split('T')[0]
+      category: newTx.category
     }]).select();
 
     if (!error && data) {
