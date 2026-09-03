@@ -235,7 +235,7 @@ export default function TripDetailsPage() {
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
                 <div className="flex items-center gap-4 mb-4">
-                  <h1 className="text-4xl md:text-5xl font-extrabold text-white drop-shadow-lg">{trip.title}</h1>
+                  <h1 className="text-4xl md:text-5xl font-extrabold text-white drop-shadow-lg capitalize">{trip.title}</h1>
                   <span className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border flex items-center gap-2 ${
                     regStatus === 'closed'
                       ? 'bg-red-500/10 text-red-400 border-red-500/20'

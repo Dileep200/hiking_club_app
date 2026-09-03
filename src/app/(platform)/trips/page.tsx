@@ -163,24 +163,24 @@ export default function TripsPage() {
           {/* Trip Cards */}
           <div className={`grid gap-6 ${isAdmin ? 'lg:col-span-8 grid-cols-1 md:grid-cols-2' : 'lg:col-span-12 grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
             {trips.map((trip) => (
-              <div key={trip.id} onClick={() => router.push(`/trips/${trip.id}`)} className="cursor-pointer group relative overflow-hidden rounded-3xl bg-white/10 backdrop-blur-xl border border-white/10 shadow-2xl transition-all duration-300 hover:-translate-y-2 hover:shadow-emerald-500/20 hover:border-emerald-500/30">
-                <div className="relative h-64 w-full overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60 z-10"></div>
-                  <img src={(trip as any).image_url || trip.imageUrl || 'https://images.unsplash.com/photo-1519331379826-f10be5486c6f?q=80&w=800&auto=format&fit=crop'} alt={trip.title} className="object-cover w-full h-full transform group-hover:scale-105 transition-transform duration-700 ease-out" />
+              <div key={trip.id} onClick={() => router.push(`/trips/${trip.id}`)} className="cursor-pointer group relative overflow-hidden rounded-3xl bg-slate-900 border border-slate-700 shadow-2xl transition-all duration-300 hover:-translate-y-2 hover:shadow-emerald-500/20 hover:border-emerald-500/30 flex flex-col">
+                <div className="relative h-56 w-full shrink-0 overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-900/60 z-10 pointer-events-none"></div>
+                  <img src={trip.image_url || trip.imageUrl || 'https://images.unsplash.com/photo-1519331379826-f10be5486c6f?q=80&w=800&auto=format&fit=crop'} alt={trip.title} className="object-cover w-full h-full transform group-hover:scale-105 transition-transform duration-700 ease-out" />
                   
                   <div className="absolute top-4 right-4 z-20">
                     <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-md border shadow-lg ${
-                      trip.difficulty === 'Easy' ? 'bg-emerald-500/30 text-emerald-200 border-emerald-500/50' :
-                      trip.difficulty === 'Moderate' ? 'bg-amber-500/30 text-amber-200 border-amber-500/50' :
-                      'bg-rose-500/30 text-rose-200 border-rose-500/50'
+                      trip.difficulty === 'Easy' ? 'bg-emerald-500/90 text-white border-emerald-400' :
+                      trip.difficulty === 'Moderate' ? 'bg-amber-500/90 text-white border-amber-400' :
+                      'bg-rose-500/90 text-white border-rose-400'
                     }`}>
                       {trip.difficulty}
                     </span>
                   </div>
                 </div>
                 
-                <div className="p-6 relative z-20 -mt-16 bg-gradient-to-t from-slate-900 via-slate-900/95 to-transparent pt-12">
-                  <h3 className="text-2xl font-bold text-white mb-4 drop-shadow-md">{trip.title}</h3>
+                <div className="p-6 relative z-20 flex-1 flex flex-col bg-slate-900">
+                  <h3 className="text-2xl font-bold text-white mb-4 tracking-tight capitalize">{trip.title}</h3>
                   
                   <div className="mb-4 flex items-center">
                     <span className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border flex items-center gap-2 ${
