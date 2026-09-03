@@ -215,7 +215,10 @@ export default function Home() {
                       <h3 className="text-3xl md:text-4xl font-extrabold text-white">{nextTrip.title}</h3>
                       {isRegOpen ? (
                         <span className="px-4 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-sm font-bold uppercase tracking-widest flex items-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.3)]">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                          </span>
                           Registrations Live
                         </span>
                       ) : (

@@ -163,18 +163,24 @@ export default function TripsPage() {
                 <div className="p-6 relative z-20 -mt-16 bg-gradient-to-t from-slate-900 via-slate-900/95 to-transparent pt-12">
                   <h3 className="text-2xl font-bold text-white mb-4 drop-shadow-md">{trip.title}</h3>
                   
-                  {/* Non-admins see reg status here */}
-                  {!isAdmin && (
-                    <div className="mb-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${
-                        regStatuses[`trip_reg_${trip.id}`] === 'closed'
-                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                          : 'bg-green-500/20 text-green-300 border-green-500/30'
-                      }`}>
-                        {regStatuses[`trip_reg_${trip.id}`] === 'closed' ? 'Registration Closed' : 'Registration Open'}
-                      </span>
-                    </div>
-                  )}
+                  <div className="mb-4 flex items-center">
+                    <span className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border flex items-center gap-2 ${
+                      regStatuses[`trip_reg_${trip.id}`] === 'closed'
+                        ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                        : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.2)]'
+                    }`}>
+                      {regStatuses[`trip_reg_${trip.id}`] !== 'closed' && (
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                      )}
+                      {regStatuses[`trip_reg_${trip.id}`] === 'closed' && (
+                        <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                      )}
+                      {regStatuses[`trip_reg_${trip.id}`] === 'closed' ? 'Registration Closed' : 'Registration Live'}
+                    </span>
+                  </div>
                   
                   <div className="flex flex-col gap-3 text-slate-300 mb-4">
                     <div className="flex items-center gap-3">
