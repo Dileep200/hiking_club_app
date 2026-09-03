@@ -6,8 +6,8 @@ import Navbar from "@/components/Navbar";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "University Hiking Club | Explore Beyond Boundaries",
-  description: "Discover trails. Build memories. Conquer heights.",
+  title: "SRU Hiking Club | Explore Beyond Boundaries",
+  description: "Join the most adventurous community at SRU. Discover trails, build memories, and conquer heights with us.",
 };
 
 export default function RootLayout({

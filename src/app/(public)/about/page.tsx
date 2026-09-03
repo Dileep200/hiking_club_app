@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { motion } from "framer-motion";
 import { Plus, Trash2, Edit2, Info } from "lucide-react";
@@ -97,7 +97,7 @@ export default function AboutPage() {
             About Our Club
           </h1>
           <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-            Discover our story, mission, and the amazing community behind the University Hiking Club.
+            Discover our story, mission, and the amazing community behind the SRU Hiking Club.
           </p>
         </motion.div>
 

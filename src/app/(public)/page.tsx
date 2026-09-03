@@ -95,7 +95,7 @@ export default function Home() {
             transition={{ duration: 0.8, delay: 0.2 }}
           >
             <span className="inline-block py-1 px-3 rounded-full glass text-sunset-amber text-sm font-semibold tracking-wider mb-6">
-              UNIVERSITY HIKING CLUB
+              SRU HIKING CLUB
             </span>
           </motion.div>
           

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Compass, Menu, X, User, LogOut, LayoutDashboard } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -63,10 +64,12 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center">
-          <Link href="/" className="flex items-center space-x-2 group">
-            <Compass className="h-8 w-8 text-sunset-amber group-hover:rotate-45 transition-transform duration-500" />
-            <span className="text-xl font-bold tracking-wider text-off-white">
-              HIKING<span className="text-sunset-orange">CLUB</span>
+          <Link href="/" className="flex items-center space-x-3 group">
+            <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-sunset-amber/50 group-hover:border-sunset-amber transition-colors shadow-lg">
+              <Image src="/logo.jpg" alt="SRU Hiking Club Logo" fill className="object-cover" />
+            </div>
+            <span className="text-xl font-black tracking-wider text-off-white">
+              SRU HIKING<span className="text-sunset-orange">CLUB</span>
             </span>
           </Link>
 

@@ -40,7 +40,7 @@ export default function RegisterPage() {
       <div className="max-w-xl w-full space-y-8 bg-gray-900 p-8 sm:p-10 rounded-2xl shadow-2xl border border-gray-800">
         <div>
           <h2 className="text-center text-3xl font-extrabold text-white tracking-tight">
-            Join the Hiking Club
+            Join the SRU Hiking Club
           </h2>
           <p className="mt-2 text-center text-sm text-gray-400">
             Adventure awaits. Apply for membership today.
@@ -90,7 +90,7 @@ export default function RegisterPage() {
               </div>
 
               <div>
-                <label htmlFor="reason" className="block text-sm font-medium text-gray-300">Why do you want to join the Hiking Club?</label>
+                <label htmlFor="reason" className="block text-sm font-medium text-gray-300">Why do you want to join the SRU Hiking Club?</label>
                 <textarea id="reason" name="reason" rows={4} required className="mt-1 block w-full bg-gray-950 border border-gray-700 rounded-lg px-4 py-3 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-300 shadow-sm focus:shadow-[0_0_15px_rgba(16,185,129,0.3)] resize-none" placeholder="I love the outdoors and want to meet new people..."></textarea>
               </div>
             </div>

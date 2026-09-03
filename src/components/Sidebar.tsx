@@ -76,10 +76,10 @@ export default function Sidebar() {
       <div className={`fixed inset-y-0 left-0 z-40 w-64 glass-dark transform transition-transform duration-300 ease-in-out md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="h-full flex flex-col pt-20 md:pt-8 pb-4">
           <div className="px-6 mb-8 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-emerald-500 flex items-center justify-center shadow-lg">
-              <Navigation className="text-white" size={20} />
+            <div className="relative w-10 h-10 rounded-xl overflow-hidden border-2 border-emerald-500/50 shadow-lg shrink-0">
+              <img src="/logo.jpg" alt="SRU Hiking Club Logo" className="object-cover w-full h-full" />
             </div>
-            <span className="text-xl font-bold text-white tracking-tight">Hiking Club</span>
+            <span className="text-xl font-bold text-white tracking-tight">SRU Hiking Club</span>
           </div>
 
           <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
