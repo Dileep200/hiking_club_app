@@ -117,14 +117,16 @@ export default function TripsPage() {
       date: trip.date,
       distance: trip.distance,
       difficulty: trip.difficulty,
-      imageUrl: trip.imageUrl || trip.image_url,
+      imageUrl: trip.imageUrl || trip.image_url || '',
       spots: trip.spots,
       spots_filled: trip.spots_filled,
       budget: trip.budget,
       details: trip.details,
       reg_status: regStatuses[`trip_reg_${trip.id}`] || 'open'
     });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => {
+      document.getElementById('admin-trip-form')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   };
 
   const handleDeleteTrip = async (id: string) => {
@@ -248,6 +250,7 @@ export default function TripsPage() {
                       <div className="flex gap-2">
                         <button 
                           onClick={(e) => { 
+                            e.preventDefault();
                             e.stopPropagation(); 
                             handleToggleRegistration(trip.id, regStatuses[`trip_reg_${trip.id}`] || 'open'); 
                           }}
@@ -260,13 +263,21 @@ export default function TripsPage() {
                           {regStatuses[`trip_reg_${trip.id}`] === 'closed' ? 'Make Registration Live' : 'Close Registration'}
                         </button>
                         <button 
-                          onClick={(e) => { e.stopPropagation(); handleEditClick(trip); }}
+                          onClick={(e) => { 
+                            e.preventDefault();
+                            e.stopPropagation(); 
+                            handleEditClick(trip); 
+                          }}
                           className="px-5 py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all shadow-lg bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500 hover:text-white border border-cyan-500/50"
                         >
                           Edit
                         </button>
                         <button 
-                          onClick={(e) => { e.stopPropagation(); handleDeleteTrip(trip.id); }}
+                          onClick={(e) => { 
+                            e.preventDefault();
+                            e.stopPropagation(); 
+                            handleDeleteTrip(trip.id); 
+                          }}
                           className="px-5 py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all shadow-lg bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/50"
                         >
                           Delete
@@ -281,7 +292,7 @@ export default function TripsPage() {
 
           {/* Admin Create / Edit Form */}
           {isAdmin && (
-            <div className="lg:col-span-4 h-fit sticky top-8">
+            <div id="admin-trip-form" className="lg:col-span-4 h-fit sticky top-8">
               <div className="relative overflow-hidden rounded-3xl bg-slate-800 border border-slate-700 shadow-2xl p-8">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none"></div>
                 
