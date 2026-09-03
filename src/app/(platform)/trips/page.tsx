@@ -12,6 +12,7 @@ interface Trip {
   distance: string;
   difficulty: 'Easy' | 'Moderate' | 'Hard';
   imageUrl: string;
+  image_url?: string;
   spots: number;
   spots_filled: number;
   budget: string;
