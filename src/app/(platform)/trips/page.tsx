@@ -278,8 +278,6 @@ export default function TripsPage() {
             ))}
           </div>
 
-          {/* Admin Create Form */}
-          {isAdmin && (
           {/* Admin Create / Edit Form */}
           {isAdmin && (
             <div className="lg:col-span-4 h-fit sticky top-8">
