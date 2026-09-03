@@ -89,10 +89,10 @@ export default function SettingsPage() {
                     </div>
                     <div className="flex gap-3">
                       <button onClick={() => handleReject(user.id)} className="px-5 py-2.5 text-sm font-medium text-slate-300 bg-slate-800 border border-slate-700 hover:bg-slate-700 hover:text-white rounded-md transition-colors">
-                        Deny
+                        Deny Request
                       </button>
                       <button onClick={() => handleApprove(user.id)} className="px-5 py-2.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-md shadow-sm transition-colors">
-                        Authorize Admin
+                        Approve (Click to approve by me)
                       </button>
                     </div>
                   </li>
