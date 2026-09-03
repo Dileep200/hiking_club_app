@@ -119,12 +119,12 @@ export default function LiveTrekTracker({
     } else {
       const destIcon = window.L.divIcon({
         className: 'custom-dest-marker',
-        html: <div style="width: 20px; height: 20px; background-color: #ef4444; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 15px rgba(239,68,68,0.8); display: flex; align-items: center; justify-content: center;"><div style="width: 6px; height: 6px; background: white; border-radius: 50%;"></div></div>,
+        html: `<div style="width: 20px; height: 20px; background-color: #ef4444; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 15px rgba(239,68,68,0.8); display: flex; align-items: center; justify-content: center;"><div style="width: 6px; height: 6px; background: white; border-radius: 50%;"></div></div>`,
         iconSize: [20, 20],
         iconAnchor: [10, 10]
       });
       const marker = window.L.marker([lat, lng], { icon: destIcon }).addTo(map);
-      marker.bindPopup(<div style="color:black; font-weight:bold;">Trek Destination</div>);
+      marker.bindPopup(`<div style="color:black; font-weight:bold;">Trek Destination</div>`);
       setDestMarker(marker);
     }
   };
@@ -152,20 +152,20 @@ export default function LiveTrekTracker({
         const userName = pt.users?.name || 'Hiker';
         if (participantMarkers.current[pt.user_id]) {
           participantMarkers.current[pt.user_id].setLatLng([pt.lat, pt.lng]);
-          participantMarkers.current[pt.user_id].setPopupContent(<div style="color:black; font-weight:bold; padding: 2px;"> + userName + </div>);
+          participantMarkers.current[pt.user_id].setPopupContent(`<div style="color:black; font-weight:bold; padding: 2px;">` + userName + `</div>`);
         } else {
           const userIcon = window.L.divIcon({
             className: 'custom-user-marker',
-            html: <div style="display:flex; flex-direction:column; align-items:center; gap:2px; transform:translateY(-100%);">
-                     <div style="background:rgba(0,0,0,0.7); color:white; padding:2px 8px; border-radius:12px; font-size:11px; white-space:nowrap; border:1px solid rgba(255,255,255,0.2); font-weight:600;"> + userName + </div>
+            html: `<div style="display:flex; flex-direction:column; align-items:center; gap:2px; transform:translateY(-100%);">
+                     <div style="background:rgba(0,0,0,0.7); color:white; padding:2px 8px; border-radius:12px; font-size:11px; white-space:nowrap; border:1px solid rgba(255,255,255,0.2); font-weight:600;">` + userName + `</div>
                      <div style="width:14px; height:14px; background-color:#10b981; border-radius:50%; border:2px solid white; box-shadow:0 0 10px rgba(16,185,129,0.8);"></div>
-                   </div>,
+                   </div>`,
             iconSize: [0, 0],
             iconAnchor: [0, 0]
           });
 
           const marker = window.L.marker([pt.lat, pt.lng], { icon: userIcon }).addTo(map);
-          marker.bindPopup(<div style="color:black; font-weight:bold;"> + userName + </div>);
+          marker.bindPopup(`<div style="color:black; font-weight:bold;">` + userName + `</div>`);
           participantMarkers.current[pt.user_id] = marker;
         }
       });
@@ -272,7 +272,11 @@ export default function LiveTrekTracker({
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20">
           <button 
             onClick={toggleTracking}
-            className={px-8 py-4 rounded-full font-black uppercase tracking-widest transition-all shadow-2xl flex items-center gap-3 backdrop-blur-md border }
+            className={`px-8 py-4 rounded-full font-black uppercase tracking-widest transition-all shadow-2xl flex items-center gap-3 backdrop-blur-md border ${
+              isTracking 
+                ? 'bg-rose-500/90 text-white border-rose-400 hover:bg-rose-600' 
+                : 'bg-emerald-500/90 text-white border-emerald-400 hover:bg-emerald-600'
+            }`}
           >
             {isTracking ? (
               <>

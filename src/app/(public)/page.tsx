@@ -58,7 +58,7 @@ export default function Home() {
         updateTimeLeft(tripData.date);
 
         // Fetch reg status
-        const { data: regData } = await supabase.from('club_settings').select('value').eq('key', \	rip_reg_\\).single();
+        const { data: regData } = await supabase.from('club_settings').select('value').eq('key', `trip_reg_${tripData.id}`).single();
         if (regData && regData.value === 'closed') {
           setIsRegOpen(false);
         }
@@ -214,7 +214,7 @@ export default function Home() {
               <p className="text-center text-slate-500 italic">No about information available.</p>
             ) : (
               aboutSections.map((section, index) => (
-                <div key={section.id} className={\lex flex-col md:flex-row gap-8 items-center \\}>
+                <div key={section.id} className={`flex flex-col md:flex-row gap-8 items-center ${index % 2 !== 0 ? 'md:flex-row-reverse' : ''}`}>
                   {section.image_url && (
                     <div className="w-full md:w-1/2">
                       <div className="relative h-80 rounded-3xl overflow-hidden shadow-2xl border border-white/10 group">
@@ -222,7 +222,7 @@ export default function Home() {
                       </div>
                     </div>
                   )}
-                  <div className={\w-full \\}>
+                  <div className={`w-full ${section.image_url ? 'md:w-1/2' : ''}`}>
                     {section.title && <h3 className="text-3xl font-bold text-white mb-4">{section.title}</h3>}
                     {section.content && <p className="text-slate-300 text-lg leading-relaxed whitespace-pre-wrap">{section.content}</p>}
                     
@@ -383,7 +383,11 @@ export default function Home() {
                 )}
                 
                 <div className="px-5 py-2.5 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 text-white font-bold tracking-widest uppercase text-xs flex items-center gap-2 shadow-lg">
-                  <Activity className={\w-4 h-4 \\} />
+                  <Activity className={`w-4 h-4 ${
+                    nextTrip.difficulty === 'Easy' ? 'text-emerald-400' : 
+                    nextTrip.difficulty === 'Moderate' ? 'text-sunset-amber' : 
+                    'text-rose-500'
+                  }`} />
                   {nextTrip.difficulty}
                 </div>
               </div>
@@ -449,8 +453,8 @@ export default function Home() {
                       <div className="w-full h-4 bg-slate-900 rounded-full overflow-hidden shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] relative">
                         {/* Glowing progress track */}
                         <div 
-                          className={\h-full rounded-full transition-all duration-1000 ease-out relative overflow-hidden \\} 
-                          style={{ width: \\%\ }}
+                          className={`h-full rounded-full transition-all duration-1000 ease-out relative overflow-hidden ${isRegOpen ? 'bg-gradient-to-r from-emerald-600 via-emerald-400 to-cyan-400' : 'bg-slate-600'}`} 
+                          style={{ width: `${Math.min(100, ((nextTrip.spots_filled || 0) / (nextTrip.spots || 40)) * 100)}%` }}
                         >
                           {/* Shimmer effect inside the bar */}
                           {isRegOpen && (
@@ -465,7 +469,7 @@ export default function Home() {
                     </div>
 
                     {/* Magnetic Action Button */}
-                    <Link href={\/trips/\\} className="w-full lg:w-auto shrink-0">
+                    <Link href={`/trips/${nextTrip.id}`} className="w-full lg:w-auto shrink-0">
                       <button className="w-full lg:w-auto px-10 py-6 bg-white text-slate-900 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-200 transition-all duration-300 shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:shadow-[0_0_50px_rgba(255,255,255,0.6)] hover:-translate-y-1 flex items-center justify-center gap-4 group/btn">
                         View Full Details
                         <ArrowRight className="w-6 h-6 group-hover/btn:translate-x-2 transition-transform" />
