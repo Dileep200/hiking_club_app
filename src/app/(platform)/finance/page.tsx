@@ -35,15 +35,25 @@ export default function FinancePage() {
 
     const { data: { session } } = await supabase.auth.getSession();
 
-    const { data, error } = await supabase.from('transactions').insert([{
+    const { error } = await supabase.from('transactions').insert([{
       description: newTx.description,
       amount: amount,
       type: newTx.type,
       category: newTx.category
-    }]).select();
+    }]);
 
-    if (!error && data) {
-      setLedger([data[0], ...ledger]);
+    if (!error) {
+      // Manually add to ledger since we can't use .select() without a SELECT policy
+      const newEntry = {
+        id: crypto.randomUUID(),
+        description: newTx.description,
+        amount: amount,
+        type: newTx.type,
+        category: newTx.category,
+        date: new Date().toISOString().split('T')[0],
+        created_at: new Date().toISOString()
+      };
+      setLedger([newEntry, ...ledger]);
       setNewTx({ description: '', amount: '', type: 'expense', category: 'Food' });
       setShowAddForm(false);
     } else {

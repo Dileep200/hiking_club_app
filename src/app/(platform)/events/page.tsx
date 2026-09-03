@@ -122,7 +122,7 @@ export default function EventsPage() {
                 <input required value={newEvent.title} onChange={e => setNewEvent({...newEvent, title: e.target.value})} placeholder="Event Title" className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white focus:border-cyan-400" />
                 <input required value={newEvent.description} onChange={e => setNewEvent({...newEvent, description: e.target.value})} placeholder="Short Description" className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white focus:border-cyan-400" />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <input required type="datetime-local" value={newEvent.date} onChange={e => setNewEvent({...newEvent, date: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white focus:border-cyan-400" />
+                  <input required type="date" value={newEvent.date} onChange={e => setNewEvent({...newEvent, date: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white focus:border-cyan-400" />
                   <input required value={newEvent.location} onChange={e => setNewEvent({...newEvent, location: e.target.value})} placeholder="Location" className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white focus:border-cyan-400" />
                 </div>
                 <div>
