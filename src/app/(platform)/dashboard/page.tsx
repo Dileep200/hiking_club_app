@@ -13,20 +13,71 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [monthlyData, setMonthlyData] = useState<any[]>([]);
+  const [difficultyData, setDifficultyData] = useState<any[]>([]);
 
   useEffect(() => {
     async function fetchData() {
       try {
         const supabase = createClient();
         
-        // Use existing tables for stats
-        const { count: tripsCount } = await supabase.from('trips').select('*', { count: 'exact', head: true });
+        // Fetch full trips data to compute chart metrics
+        const { data: tripsData } = await supabase.from('trips').select('*');
+        const tripsCount = tripsData ? tripsData.length : 0;
+        
         const { count: usersCount } = await supabase.from('users').select('*', { count: 'exact', head: true });
         const { count: txCount } = await supabase.from('transactions').select('*', { count: 'exact', head: true });
         const { count: galleryCount } = await supabase.from('gallery_photos').select('*', { count: 'exact', head: true });
 
+        // Calculate Monthly Distance Data
+        if (tripsData && tripsData.length > 0) {
+          const monthMap: Record<string, { trips: number, distance: number }> = {};
+          
+          tripsData.forEach((trip: any) => {
+            if (!trip.date) return;
+            const date = new Date(trip.date);
+            const month = date.toLocaleString('default', { month: 'short' });
+            
+            if (!monthMap[month]) monthMap[month] = { trips: 0, distance: 0 };
+            monthMap[month].trips += 1;
+            
+            // Parse distance (e.g. '15km', '15 km', '15')
+            if (trip.distance) {
+              const numMatch = String(trip.distance).match(/[\d.]+/);
+              if (numMatch) {
+                monthMap[month].distance += parseFloat(numMatch[0]);
+              }
+            }
+          });
+
+          const mData = Object.keys(monthMap).map(m => ({
+            name: m,
+            trips: monthMap[m].trips,
+            distance: Math.round(monthMap[m].distance)
+          }));
+          
+          // Basic sort by month index
+          const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+          mData.sort((a, b) => months.indexOf(a.name) - months.indexOf(b.name));
+          setMonthlyData(mData);
+
+          // Calculate Difficulty Distribution
+          const diffMap: Record<string, number> = {};
+          tripsData.forEach((trip: any) => {
+            if (trip.difficulty) {
+              diffMap[trip.difficulty] = (diffMap[trip.difficulty] || 0) + 1;
+            }
+          });
+          
+          const dData = Object.keys(diffMap).map(d => ({
+            name: d,
+            value: diffMap[d]
+          }));
+          setDifficultyData(dData);
+        }
+
         setStats([
-          { name: "Total Trips", value: (tripsCount || 0).toString(), icon: Mountain, trend: "+0%" },
+          { name: "Total Trips", value: tripsCount.toString(), icon: Mountain, trend: "+0%" },
           { name: "Active Members", value: (usersCount || 0).toString(), icon: Users, trend: "+0%" },
           { name: "Transactions", value: (txCount || 0).toString(), icon: Wallet, trend: "+0%" },
           { name: "Memories Captured", value: (galleryCount || 0).toString(), icon: Camera, trend: "+0%" },
@@ -173,7 +224,7 @@ export default function Dashboard() {
             transition={{ delay: 0.4 }}
           >
             <h3 className="text-xl font-bold text-white mb-6">Distance Covered Over Time</h3>
-            <DistanceChart />
+            <DistanceChart data={monthlyData} />
           </motion.div>
 
           <motion.div 
@@ -183,7 +234,7 @@ export default function Dashboard() {
             transition={{ delay: 0.5 }}
           >
             <h3 className="text-xl font-bold text-white mb-6">Difficulty Distribution</h3>
-            <DifficultyChart />
+            <DifficultyChart data={difficultyData} />
           </motion.div>
         </div>
         
