@@ -33,11 +33,14 @@ export default function FinancePage() {
     const amount = parseFloat(newTx.amount);
     if (!newTx.description || isNaN(amount)) return;
 
+    const { data: { session } } = await supabase.auth.getSession();
+
     const { data, error } = await supabase.from('transactions').insert([{
       description: newTx.description,
       amount: amount,
       type: newTx.type,
-      category: newTx.category
+      category: newTx.category,
+      date: new Date().toISOString().split('T')[0]
     }]).select();
 
     if (!error && data) {
@@ -45,7 +48,8 @@ export default function FinancePage() {
       setNewTx({ description: '', amount: '', type: 'expense', category: 'Food' });
       setShowAddForm(false);
     } else {
-      alert("Error adding transaction");
+      console.error("Supabase Error:", error);
+      alert("Error adding transaction: " + (error?.message || "Unknown error"));
     }
   };
 
