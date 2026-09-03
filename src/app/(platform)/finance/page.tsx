@@ -153,7 +153,7 @@ export default function FinancePage() {
                       <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value">
                         {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                       </Pie>
-                      <RechartsTooltip formatter={(value: number) => `₹${value}`} contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff' }} />
+                      <RechartsTooltip formatter={(value: any) => `₹${Number(value).toFixed(2)}`} contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff' }} />
                       <Legend />
                     </PieChart>
                   </ResponsiveContainer>
