@@ -13,6 +13,7 @@ interface Trip {
   difficulty: 'Easy' | 'Moderate' | 'Hard';
   imageUrl: string;
   spots: number;
+  spots_filled: number;
   budget: string;
   details: string;
 }
@@ -58,7 +59,7 @@ export default function TripsPage() {
   // form state
   const [newTrip, setNewTrip] = useState<Partial<Trip>>({
     title: '', date: '', distance: '', difficulty: 'Easy', imageUrl: 'https://images.unsplash.com/photo-1519331379826-f10be5486c6f?q=80&w=800&auto=format&fit=crop',
-    spots: 40, budget: '', details: ''
+    spots: 40, spots_filled: 0, budget: '', details: ''
   });
 
   const handleCreateTrip = async (e: React.FormEvent) => {
@@ -72,6 +73,7 @@ export default function TripsPage() {
       difficulty: newTrip.difficulty,
       image_url: newTrip.imageUrl,
       spots: newTrip.spots,
+      spots_filled: newTrip.spots_filled,
       budget: newTrip.budget,
       details: newTrip.details
     };
@@ -196,7 +198,7 @@ export default function TripsPage() {
                         {trip.spots && (
                           <div className="flex flex-col">
                             <span className="text-xs text-slate-500 uppercase font-bold tracking-wider">Spots</span>
-                            <span className="font-semibold text-white">{trip.spots} Total</span>
+                            <span className="font-semibold text-white">{trip.spots_filled || 0} / {trip.spots} Filled</span>
                           </div>
                         )}
                         {trip.budget && (
@@ -272,7 +274,7 @@ export default function TripsPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-slate-300 mb-2">Total Spots</label>
                       <input 
@@ -283,6 +285,18 @@ export default function TripsPage() {
                         onChange={e => setNewTrip({...newTrip, spots: parseInt(e.target.value)})}
                         className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all shadow-inner"
                         placeholder="e.g. 40"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-300 mb-2">Spots Filled</label>
+                      <input 
+                        type="number" 
+                        required
+                        min="0"
+                        value={newTrip.spots_filled}
+                        onChange={e => setNewTrip({...newTrip, spots_filled: parseInt(e.target.value)})}
+                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all shadow-inner"
+                        placeholder="e.g. 15"
                       />
                     </div>
                     <div>

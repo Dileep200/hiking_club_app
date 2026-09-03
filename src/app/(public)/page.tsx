@@ -211,29 +211,63 @@ export default function Home() {
                 
                 <div className="lg:w-3/5 p-8 lg:p-12 flex flex-col justify-between">
                   <div>
-                    <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">{nextTrip.title}</h3>
-                    <p className="text-gray-300 mb-8 max-w-xl">
-                      Get ready for our next adventure! This {nextTrip.difficulty.toLowerCase()} trek is perfect for hikers looking to explore nature. Distance is approximately {nextTrip.distance}.
+                    <div className="flex flex-wrap items-center gap-4 mb-4">
+                      <h3 className="text-3xl md:text-4xl font-extrabold text-white">{nextTrip.title}</h3>
+                      {isRegOpen ? (
+                        <span className="px-4 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-sm font-bold uppercase tracking-widest flex items-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                          Registrations Live
+                        </span>
+                      ) : (
+                        <span className="px-4 py-1.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 text-sm font-bold uppercase tracking-widest flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                          Registrations Closed
+                        </span>
+                      )}
+                    </div>
+                    
+                    <p className="text-gray-300 mb-8 max-w-xl text-lg leading-relaxed">
+                      {nextTrip.details || `Get ready for our next adventure! This ${nextTrip.difficulty.toLowerCase()} trek is perfect for hikers looking to explore nature. Distance is approximately ${nextTrip.distance}.`}
                     </p>
                     
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
                       <div className="flex flex-col">
                         <span className="text-gray-400 text-sm mb-1 flex items-center gap-1"><Calendar className="h-4 w-4"/> Date</span>
-                        <span className="text-white font-semibold">
+                        <span className="text-white font-semibold text-lg">
                           {new Date(nextTrip.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </span>
                       </div>
                       <div className="flex flex-col">
                         <span className="text-gray-400 text-sm mb-1 flex items-center gap-1"><Map className="h-4 w-4"/> Distance</span>
-                        <span className="text-white font-semibold">{nextTrip.distance}</span>
+                        <span className="text-white font-semibold text-lg">{nextTrip.distance}</span>
                       </div>
                       <div className="flex flex-col">
                         <span className="text-gray-400 text-sm mb-1 flex items-center gap-1"><Activity className="h-4 w-4"/> Difficulty</span>
-                        <span className="text-sunset-amber font-semibold">{nextTrip.difficulty}</span>
+                        <span className="text-sunset-amber font-semibold text-lg">{nextTrip.difficulty}</span>
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-gray-400 text-sm mb-1 flex items-center gap-1"><Users className="h-4 w-4"/> Spots</span>
-                        <span className="text-white font-semibold">{nextTrip.spots || 40} Total</span>
+                        <span className="text-gray-400 text-sm mb-1 flex items-center gap-1"><Users className="h-4 w-4"/> Budget</span>
+                        <span className="text-white font-semibold text-lg">{nextTrip.budget || 'TBA'}</span>
+                      </div>
+                    </div>
+
+                    {/* Spots Progress Bar */}
+                    <div className="mb-10 bg-black/20 p-4 rounded-2xl border border-white/5">
+                      <div className="flex justify-between items-end mb-2">
+                        <span className="text-sm font-bold text-gray-300 uppercase tracking-wider">Spot Availability</span>
+                        <span className="text-sm font-bold text-white bg-white/10 px-3 py-1 rounded-full">
+                          {Math.max(0, (nextTrip.spots || 40) - (nextTrip.spots_filled || 0))} Spots Left
+                        </span>
+                      </div>
+                      <div className="w-full h-3 bg-slate-800 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full rounded-full transition-all duration-1000 ${isRegOpen ? 'bg-gradient-to-r from-emerald-500 to-cyan-500' : 'bg-slate-600'}`} 
+                          style={{ width: `${Math.min(100, ((nextTrip.spots_filled || 0) / (nextTrip.spots || 40)) * 100)}%` }}
+                        ></div>
+                      </div>
+                      <div className="flex justify-between mt-2 text-xs text-gray-500 font-medium">
+                        <span>{nextTrip.spots_filled || 0} Filled</span>
+                        <span>{nextTrip.spots || 40} Total Capacity</span>
                       </div>
                     </div>
                   </div>
