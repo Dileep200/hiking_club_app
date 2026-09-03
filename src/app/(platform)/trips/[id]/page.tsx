@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useParams, useRouter } from 'next/navigation';
+import { Navigation, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { OfflineTracker } from '@/utils/offlineTracker';
 
 interface Trip {
   id: string;
@@ -11,6 +13,7 @@ interface Trip {
   distance: string;
   difficulty: string;
   imageUrl: string;
+  tracking_active?: boolean;
 }
 
 interface TripReport {
@@ -30,7 +33,7 @@ interface Transaction {
 }
 
 export default function TripDetailsPage() {
-  const { id } = useParams();
+  const { id } = useParams() as { id: string };
   const router = useRouter();
   const supabase = createClient();
   
@@ -41,6 +44,7 @@ export default function TripDetailsPage() {
   const [regStatus, setRegStatus] = useState<string>('open');
   
   const [loading, setLoading] = useState(true);
+  const [isSharingLocation, setIsSharingLocation] = useState(false);
   
   // Forms state
   const [newReport, setNewReport] = useState('');
@@ -60,7 +64,7 @@ export default function TripDetailsPage() {
       
       // Fetch trip
       const { data: tripData } = await supabase.from('trips').select('*').eq('id', id).single();
-      if (tripData) setTrip(tripData);
+      if (tripData) setTrip({ ...tripData, imageUrl: tripData.image_url });
       
       // Fetch reg status
       const { data: regData } = await supabase.from('club_settings').select('value').eq('key', `trip_reg_${id}`).single();
@@ -79,6 +83,26 @@ export default function TripDetailsPage() {
     
     fetchData();
   }, [id, supabase]);
+
+  useEffect(() => {
+    return () => {
+      if (isSharingLocation) {
+        OfflineTracker.stop();
+      }
+    };
+  }, [isSharingLocation]);
+
+  const toggleLocationSharing = () => {
+    if (!isSharingLocation) {
+      if (confirm("This will share your GPS location continuously while on this page, even if you briefly lose connection. Ensure you have location services enabled. Start?")) {
+        OfflineTracker.start(id);
+        setIsSharingLocation(true);
+      }
+    } else {
+      OfflineTracker.stop();
+      setIsSharingLocation(false);
+    }
+  };
 
   const handleToggleRegistration = async () => {
     const newStatus = regStatus === 'closed' ? 'open' : 'closed';
@@ -132,9 +156,50 @@ export default function TripDetailsPage() {
   const totalExpenses = transactions.reduce((sum, tx) => sum + tx.amount, 0);
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white p-8 font-sans">
-      <div className="max-w-5xl mx-auto space-y-12">
+    <div className="min-h-screen bg-slate-900 text-white p-4 md:p-8 font-sans">
+      <div className="max-w-5xl mx-auto space-y-8 md:space-y-12">
         
+        {/* Tracking Live Banner */}
+        {trip.tracking_active && (
+          <div className="bg-gradient-to-r from-emerald-900/60 to-slate-900 border border-emerald-500/30 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
+            
+            <div className="flex items-center gap-4 relative z-10">
+              <div className="relative flex h-10 w-10 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-10 w-10 bg-emerald-500 items-center justify-center">
+                  <Navigation className="text-white w-5 h-5" />
+                </span>
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white tracking-wide">Expedition is LIVE!</h2>
+                <p className="text-emerald-200/70 text-sm">Join the tracking network so admins can ensure everyone's safety.</p>
+              </div>
+            </div>
+
+            <button 
+              onClick={toggleLocationSharing}
+              className={`relative z-10 px-8 py-3 rounded-xl font-black uppercase tracking-widest transition-all shadow-lg flex items-center gap-3 shrink-0 ${
+                isSharingLocation 
+                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50 hover:bg-amber-500/30' 
+                  : 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-[0_0_20px_rgba(16,185,129,0.4)]'
+              }`}
+            >
+              {isSharingLocation ? (
+                <>
+                  <CheckCircle2 className="w-5 h-5" />
+                  Broadcasting GPS...
+                </>
+              ) : (
+                <>
+                  <Navigation className="w-5 h-5" />
+                  Share My Location
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
         {/* Header - Trip Details */}
         <div className="relative overflow-hidden rounded-3xl bg-white/10 backdrop-blur-xl border border-white/10 shadow-2xl">
           <div className="relative h-80 w-full overflow-hidden">

@@ -48,6 +48,7 @@ export default function Sidebar() {
     { name: 'Home', href: '/', icon: Home, adminOnly: false },
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, adminOnly: false },
     { name: 'Trips', href: '/trips', icon: Map, adminOnly: false },
+    { name: 'Live Tracking', href: '/admin/tracking', icon: Navigation, adminOnly: true },
     { name: 'Events', href: '/events', icon: Calendar, adminOnly: false },
     { name: 'Finance', href: '/finance', icon: Wallet, adminOnly: true },
     { name: 'Core Team', href: '/team', icon: Users, adminOnly: false },
