@@ -13,6 +13,8 @@ export default function HistoryPage() {
   
   const supabase = createClient();
 
+  const [editingHikeId, setEditingHikeId] = useState<string | null>(null);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -28,20 +30,41 @@ export default function HistoryPage() {
     setLoading(false);
   };
 
-  const handleAddHike = async (e: React.FormEvent) => {
+  const handleSubmitHike = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { data, error } = await supabase.from('trips').insert([{
-      ...newHike,
-      status: 'completed'
-    }]).select();
-
-    if (!error && data) {
-      const updated = [...hikes, data[0]].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      setHikes(updated);
-      setNewHike({ title: '', date: '', distance: '', difficulty: 'Moderate', image_url: '' });
+    if (editingHikeId) {
+      const { data, error } = await supabase.from('trips').update(newHike).eq('id', editingHikeId).select();
+      if (!error && data) {
+        setHikes(hikes.map(h => h.id === editingHikeId ? data[0] : h).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        setEditingHikeId(null);
+        setNewHike({ title: '', date: '', distance: '', difficulty: 'Moderate', image_url: '' });
+      }
     } else {
-      alert("Error saving past trip.");
+      const { data, error } = await supabase.from('trips').insert([{
+        ...newHike,
+        status: 'completed'
+      }]).select();
+
+      if (!error && data) {
+        const updated = [...hikes, data[0]].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setHikes(updated);
+        setNewHike({ title: '', date: '', distance: '', difficulty: 'Moderate', image_url: '' });
+      } else {
+        alert("Error saving past trip.");
+      }
     }
+  };
+
+  const handleEditHike = (hike: any) => {
+    setEditingHikeId(hike.id);
+    setNewHike({
+      title: hike.title,
+      date: hike.date,
+      distance: hike.distance,
+      difficulty: hike.difficulty,
+      image_url: hike.image_url || hike.imageUrl || ''
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDeleteHike = async (id: string) => {
@@ -68,9 +91,9 @@ export default function HistoryPage() {
         {isAdmin && (
           <div className="mb-16 bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-xl shadow-2xl">
             <h2 className="text-2xl font-serif font-bold mb-6 text-emerald-400 flex items-center gap-2">
-              Log a Past Expedition
+              {editingHikeId ? 'Edit Archived Expedition' : 'Log a Past Expedition'}
             </h2>
-            <form onSubmit={handleAddHike} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <form onSubmit={handleSubmitHike} className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm text-slate-400 mb-1 font-medium">Trip Title</label>
@@ -93,9 +116,16 @@ export default function HistoryPage() {
                   <ImageUpload onUploadSuccess={(url) => setNewHike({...newHike, image_url: url})} />
                   {newHike.image_url && <img src={newHike.image_url} className="h-16 mt-2 rounded border border-white/10 object-cover" />}
                 </div>
-                <button type="submit" className="w-full mt-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 px-4 rounded-lg shadow-lg transition-all">
-                  Archive Trip
-                </button>
+                <div className="flex gap-4 mt-4">
+                  {editingHikeId && (
+                    <button type="button" onClick={() => { setEditingHikeId(null); setNewHike({ title: '', date: '', distance: '', difficulty: 'Moderate', image_url: '' }); }} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3.5 px-4 rounded-lg shadow-lg transition-all">
+                      Cancel
+                    </button>
+                  )}
+                  <button type="submit" className="flex-[2] bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 px-4 rounded-lg shadow-lg transition-all">
+                    {editingHikeId ? 'Save Changes' : 'Archive Trip'}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
@@ -134,9 +164,14 @@ export default function HistoryPage() {
                         {hike.difficulty}
                       </div>
                       {isAdmin && (
-                        <button onClick={() => handleDeleteHike(hike.id)} className="flex items-center gap-1.5 bg-red-900/50 hover:bg-red-800 px-3 py-1 rounded text-xs font-medium text-red-200 transition-colors">
-                          Delete
-                        </button>
+                        <>
+                          <button onClick={() => handleEditHike(hike)} className="flex items-center gap-1.5 bg-cyan-900/50 hover:bg-cyan-800 px-3 py-1 rounded text-xs font-medium text-cyan-200 transition-colors">
+                            Edit
+                          </button>
+                          <button onClick={() => handleDeleteHike(hike.id)} className="flex items-center gap-1.5 bg-red-900/50 hover:bg-red-800 px-3 py-1 rounded text-xs font-medium text-red-200 transition-colors">
+                            Delete
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>

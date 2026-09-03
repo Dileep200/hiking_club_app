@@ -20,6 +20,8 @@ export default function GalleryPage() {
   const [newCaption, setNewCaption] = useState('');
   const [newImageUrl, setNewImageUrl] = useState('');
 
+  const [editingPhotoId, setEditingPhotoId] = useState<string | null>(null);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -35,15 +37,32 @@ export default function GalleryPage() {
     setLoading(false);
   };
 
-  const handleAddPhoto = async (e: React.FormEvent) => {
+  const handleSubmitPhoto = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newImageUrl) return alert('Please upload a photo first.');
-    const { data, error } = await supabase.from('gallery_photos').insert([{ image_url: newImageUrl, caption: newCaption }]).select();
-    if (!error && data) {
-      setPhotos([data[0], ...photos]);
-      setNewCaption('');
-      setNewImageUrl('');
+    if (editingPhotoId) {
+      const { data, error } = await supabase.from('gallery_photos').update({ image_url: newImageUrl, caption: newCaption }).eq('id', editingPhotoId).select();
+      if (!error && data) {
+        setPhotos(photos.map(p => p.id === editingPhotoId ? data[0] : p));
+        setEditingPhotoId(null);
+        setNewCaption('');
+        setNewImageUrl('');
+      }
+    } else {
+      const { data, error } = await supabase.from('gallery_photos').insert([{ image_url: newImageUrl, caption: newCaption }]).select();
+      if (!error && data) {
+        setPhotos([data[0], ...photos]);
+        setNewCaption('');
+        setNewImageUrl('');
+      }
     }
+  };
+
+  const handleEditPhoto = (photo: Photo) => {
+    setEditingPhotoId(photo.id);
+    setNewCaption(photo.caption);
+    setNewImageUrl(photo.image_url);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDelete = async (id: string) => {
@@ -67,8 +86,8 @@ export default function GalleryPage() {
 
         {isAdmin && (
           <div className="bg-white/5 p-6 rounded-2xl border border-emerald-500/30">
-            <h2 className="text-xl font-bold mb-4 text-emerald-400">Add New Photo</h2>
-            <form onSubmit={handleAddPhoto} className="space-y-4">
+            <h2 className="text-xl font-bold mb-4 text-emerald-400">{editingPhotoId ? 'Edit Photo' : 'Add New Photo'}</h2>
+            <form onSubmit={handleSubmitPhoto} className="space-y-4">
               <div>
                 <label className="block text-sm mb-1 text-slate-300">Upload Image</label>
                 <ImageUpload onUploadSuccess={setNewImageUrl} />
@@ -83,7 +102,12 @@ export default function GalleryPage() {
                   className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-2 text-white"
                 />
               </div>
-              <button type="submit" className="px-6 py-2 bg-emerald-500 text-slate-900 font-bold rounded-xl hover:bg-emerald-400">Add to Gallery</button>
+              <div className="flex gap-4">
+                {editingPhotoId && (
+                  <button type="button" onClick={() => { setEditingPhotoId(null); setNewCaption(''); setNewImageUrl(''); }} className="px-6 py-2 bg-slate-700 text-white font-bold rounded-xl hover:bg-slate-600">Cancel</button>
+                )}
+                <button type="submit" className="px-6 py-2 bg-emerald-500 text-slate-900 font-bold rounded-xl hover:bg-emerald-400">{editingPhotoId ? 'Save Changes' : 'Add to Gallery'}</button>
+              </div>
             </form>
           </div>
         )}
@@ -100,9 +124,14 @@ export default function GalleryPage() {
                   <div className="absolute inset-0 bg-black/60 flex flex-col justify-end p-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <span className="text-white font-semibold text-lg">{photo.caption}</span>
                     {isAdmin && (
-                      <button onClick={() => handleDelete(photo.id)} className="mt-2 text-sm text-red-400 hover:text-red-300 w-fit">
-                        Delete Photo
-                      </button>
+                      <div className="flex gap-4 mt-2">
+                        <button onClick={() => handleEditPhoto(photo)} className="text-sm text-cyan-400 hover:text-cyan-300 w-fit">
+                          Edit Photo
+                        </button>
+                        <button onClick={() => handleDelete(photo.id)} className="text-sm text-red-400 hover:text-red-300 w-fit">
+                          Delete Photo
+                        </button>
+                      </div>
                     )}
                   </div>
                 )}

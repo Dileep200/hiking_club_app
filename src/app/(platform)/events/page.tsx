@@ -12,7 +12,10 @@ export default function EventsPage() {
   const supabase = createClient();
 
   // Form states
+  const [editingAnnId, setEditingAnnId] = useState<string | null>(null);
   const [newAnn, setNewAnn] = useState({ title: '', content: '' });
+  
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [newEvent, setNewEvent] = useState({ title: '', description: '', date: '', location: '', image_url: '' });
 
   useEffect(() => {
@@ -36,22 +39,48 @@ export default function EventsPage() {
     setLoading(false);
   };
 
-  const handleCreateAnnouncement = async (e: React.FormEvent) => {
+  const handleSubmitAnnouncement = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { data } = await supabase.from('announcements').insert([newAnn]).select();
-    if (data) setAnnouncements([data[0], ...announcements]);
+    if (editingAnnId) {
+      const { data } = await supabase.from('announcements').update(newAnn).eq('id', editingAnnId).select();
+      if (data) setAnnouncements(announcements.map(a => a.id === editingAnnId ? data[0] : a));
+      setEditingAnnId(null);
+    } else {
+      const { data } = await supabase.from('announcements').insert([newAnn]).select();
+      if (data) setAnnouncements([data[0], ...announcements]);
+    }
     setNewAnn({ title: '', content: '' });
   };
 
-  const handleCreateEvent = async (e: React.FormEvent) => {
+  const handleEditAnn = (ann: any) => {
+    setEditingAnnId(ann.id);
+    setNewAnn({ title: ann.title, content: ann.content });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSubmitEvent = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { data } = await supabase.from('events').insert([newEvent]).select();
-    if (data) {
-      // sort events by date
-      const updated = [...events, data[0]].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      setEvents(updated);
+    if (editingEventId) {
+      const { data } = await supabase.from('events').update(newEvent).eq('id', editingEventId).select();
+      if (data) {
+        const updated = events.map(ev => ev.id === editingEventId ? data[0] : ev).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        setEvents(updated);
+      }
+      setEditingEventId(null);
+    } else {
+      const { data } = await supabase.from('events').insert([newEvent]).select();
+      if (data) {
+        const updated = [...events, data[0]].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        setEvents(updated);
+      }
     }
     setNewEvent({ title: '', description: '', date: '', location: '', image_url: '' });
+  };
+
+  const handleEditEvent = (ev: any) => {
+    setEditingEventId(ev.id);
+    setNewEvent({ title: ev.title, description: ev.description, date: ev.date, location: ev.location, image_url: ev.image_url });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleRegister = async (eventId: string) => {
@@ -103,22 +132,29 @@ export default function EventsPage() {
           <div className="grid md:grid-cols-2 gap-8">
             <div className="bg-white/5 backdrop-blur-xl border border-emerald-500/30 p-6 md:p-8 rounded-3xl shadow-2xl">
               <h2 className="text-2xl font-bold mb-6 text-emerald-400 flex items-center gap-2">
-                Post Announcement
+                {editingAnnId ? 'Edit Announcement' : 'Post Announcement'}
               </h2>
-              <form onSubmit={handleCreateAnnouncement} className="space-y-4">
+              <form onSubmit={handleSubmitAnnouncement} className="space-y-4">
                 <input required value={newAnn.title} onChange={e => setNewAnn({...newAnn, title: e.target.value})} placeholder="Announcement Title" className="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white focus:border-emerald-400" />
                 <textarea required value={newAnn.content} onChange={e => setNewAnn({...newAnn, content: e.target.value})} placeholder="What's the news?" className="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white focus:border-emerald-400 h-32 resize-none"></textarea>
-                <button type="submit" className="w-full bg-emerald-500/20 hover:bg-emerald-500/40 border border-emerald-500 text-emerald-400 font-bold py-4 px-6 rounded-xl">
-                  Publish
-                </button>
+                <div className="flex gap-4">
+                  {editingAnnId && (
+                    <button type="button" onClick={() => { setEditingAnnId(null); setNewAnn({ title: '', content: '' }); }} className="flex-1 bg-slate-700/50 hover:bg-slate-700 border border-slate-600 text-white font-bold py-4 px-6 rounded-xl">
+                      Cancel
+                    </button>
+                  )}
+                  <button type="submit" className="flex-[2] bg-emerald-500/20 hover:bg-emerald-500/40 border border-emerald-500 text-emerald-400 font-bold py-4 px-6 rounded-xl transition-all">
+                    {editingAnnId ? 'Save Changes' : 'Post'}
+                  </button>
+                </div>
               </form>
             </div>
 
             <div className="bg-white/5 backdrop-blur-xl border border-cyan-500/30 p-6 md:p-8 rounded-3xl shadow-2xl">
               <h2 className="text-2xl font-bold mb-6 text-cyan-400 flex items-center gap-2">
-                Create Event
+                {editingEventId ? 'Edit Event' : 'Create Event'}
               </h2>
-              <form onSubmit={handleCreateEvent} className="space-y-4">
+              <form onSubmit={handleSubmitEvent} className="space-y-4">
                 <input required value={newEvent.title} onChange={e => setNewEvent({...newEvent, title: e.target.value})} placeholder="Event Title" className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white focus:border-cyan-400" />
                 <input required value={newEvent.description} onChange={e => setNewEvent({...newEvent, description: e.target.value})} placeholder="Short Description" className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white focus:border-cyan-400" />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -130,9 +166,16 @@ export default function EventsPage() {
                   <ImageUpload onUploadSuccess={(url) => setNewEvent({...newEvent, image_url: url})} />
                   {newEvent.image_url && <img src={newEvent.image_url} className="h-12 mt-2 rounded" />}
                 </div>
-                <button type="submit" className="w-full bg-cyan-500/20 hover:bg-cyan-500/40 border border-cyan-500 text-cyan-400 font-bold py-4 px-6 rounded-xl">
-                  Schedule Hike
-                </button>
+                <div className="flex gap-4">
+                  {editingEventId && (
+                    <button type="button" onClick={() => { setEditingEventId(null); setNewEvent({ title: '', description: '', date: '', location: '', image_url: '' }); }} className="flex-1 bg-slate-700/50 hover:bg-slate-700 border border-slate-600 text-white font-bold py-4 px-6 rounded-xl">
+                      Cancel
+                    </button>
+                  )}
+                  <button type="submit" className="flex-[2] bg-cyan-500/20 hover:bg-cyan-500/40 border border-cyan-500 text-cyan-400 font-bold py-4 px-6 rounded-xl transition-all">
+                    {editingEventId ? 'Save Changes' : 'Schedule Hike'}
+                  </button>
+                </div>
               </form>
             </div>
           </div>
@@ -166,13 +209,18 @@ export default function EventsPage() {
                     </div>
                   </div>
                   {!isAdmin ? (
-                    <button onClick={() => handleRegister(event.id)} className="w-full md:w-auto px-8 py-4 font-bold text-white bg-cyan-600 hover:bg-cyan-500 rounded-xl">
+                    <button onClick={() => handleRegister(event.id)} className="w-full md:w-auto px-8 py-4 font-bold text-white bg-cyan-600 hover:bg-cyan-500 rounded-xl transition-colors">
                       Register Now
                     </button>
                   ) : (
-                    <button onClick={() => handleDeleteEvent(event.id)} className="w-full md:w-auto px-8 py-4 font-bold text-white bg-red-600 hover:bg-red-500 rounded-xl">
-                      Delete Event
-                    </button>
+                    <div className="flex flex-col gap-2 w-full md:w-auto">
+                      <button onClick={() => handleEditEvent(event)} className="w-full md:w-auto px-8 py-3 font-bold text-white bg-cyan-600 hover:bg-cyan-500 rounded-xl transition-colors text-sm">
+                        Edit Event
+                      </button>
+                      <button onClick={() => handleDeleteEvent(event.id)} className="w-full md:w-auto px-8 py-3 font-bold text-white bg-red-600 hover:bg-red-500 rounded-xl transition-colors text-sm">
+                        Delete Event
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -197,9 +245,14 @@ export default function EventsPage() {
                       {new Date(ann.created_at).toLocaleDateString()}
                     </div>
                     {isAdmin && (
-                      <button onClick={() => handleDeleteAnnouncement(ann.id)} className="text-xs font-bold text-red-400 hover:text-red-300 transition-colors">
-                        Delete
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => handleEditAnn(ann)} className="text-xs font-bold text-cyan-400 hover:text-cyan-300 transition-colors">
+                          Edit
+                        </button>
+                        <button onClick={() => handleDeleteAnnouncement(ann.id)} className="text-xs font-bold text-red-400 hover:text-red-300 transition-colors">
+                          Delete
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>

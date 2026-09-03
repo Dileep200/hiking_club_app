@@ -27,6 +27,8 @@ export default function TeamPage() {
     name: '', position: '', email: '', phone: '', year: '', photo_url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=400&auto=format&fit=crop'
   });
 
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
+
   useEffect(() => {
     const fetchTeamAndRole = async () => {
       // 1. Get user role
@@ -48,16 +50,40 @@ export default function TeamPage() {
     fetchTeamAndRole();
   }, []);
 
-  const handleAddMember = async (e: React.FormEvent) => {
+  const handleSubmitMember = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMember.name || !newMember.position) return;
     
-    const { data, error } = await supabase.from('core_team').insert([newMember]).select();
-    if (data && data.length > 0) {
-      setTeam([...team, data[0] as CoreMember]);
-      setShowForm(false);
-      setNewMember({ name: '', position: '', email: '', phone: '', year: '', photo_url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=400&auto=format&fit=crop' });
+    if (editingMemberId) {
+      const { data, error } = await supabase.from('core_team').update(newMember).eq('id', editingMemberId).select();
+      if (data && data.length > 0) {
+        setTeam(team.map(m => m.id === editingMemberId ? data[0] as CoreMember : m));
+        setShowForm(false);
+        setEditingMemberId(null);
+        setNewMember({ name: '', position: '', email: '', phone: '', year: '', photo_url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=400&auto=format&fit=crop' });
+      }
+    } else {
+      const { data, error } = await supabase.from('core_team').insert([newMember]).select();
+      if (data && data.length > 0) {
+        setTeam([...team, data[0] as CoreMember]);
+        setShowForm(false);
+        setNewMember({ name: '', position: '', email: '', phone: '', year: '', photo_url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=400&auto=format&fit=crop' });
+      }
     }
+  };
+
+  const handleEditClick = (member: CoreMember) => {
+    setEditingMemberId(member.id);
+    setNewMember({
+      name: member.name,
+      position: member.position,
+      email: member.email,
+      phone: member.phone,
+      year: member.year,
+      photo_url: member.photo_url
+    });
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDelete = async (id: string) => {
@@ -97,8 +123,8 @@ export default function TeamPage() {
         {/* Admin Form */}
         {isAdmin && showForm && (
           <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-3xl shadow-2xl">
-            <h2 className="text-2xl font-bold mb-6 text-emerald-400">Add New Team Member</h2>
-            <form onSubmit={handleAddMember} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <h2 className="text-2xl font-bold mb-6 text-emerald-400">{editingMemberId ? 'Edit Team Member' : 'Add New Team Member'}</h2>
+            <form onSubmit={handleSubmitMember} className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-slate-300 mb-2">Full Name</label>
                 <input required type="text" value={newMember.name} onChange={e => setNewMember({...newMember, name: e.target.value})} className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-emerald-500/50 outline-none" placeholder="e.g. Jane Doe" />
@@ -124,9 +150,14 @@ export default function TeamPage() {
                 <ImageUpload onUploadSuccess={(url) => setNewMember({...newMember, photo_url: url})} />
                 {newMember.photo_url && <img src={newMember.photo_url} alt="Preview" className="mt-2 h-16 w-16 object-cover rounded-xl" />}
               </div>
-              <div className="md:col-span-2">
-                <button type="submit" className="bg-emerald-500 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-emerald-500/25 hover:bg-emerald-400 transition w-full md:w-auto">
-                  Save Member
+              <div className="md:col-span-2 flex gap-4">
+                {editingMemberId && (
+                  <button type="button" onClick={() => { setEditingMemberId(null); setShowForm(false); setNewMember({ name: '', position: '', email: '', phone: '', year: '', photo_url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=400&auto=format&fit=crop' }); }} className="bg-slate-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:bg-slate-600 transition">
+                    Cancel
+                  </button>
+                )}
+                <button type="submit" className="bg-emerald-500 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-emerald-500/25 hover:bg-emerald-400 transition flex-1 md:flex-none">
+                  {editingMemberId ? 'Save Changes' : 'Save Member'}
                 </button>
               </div>
             </form>
@@ -142,13 +173,22 @@ export default function TeamPage() {
               <div key={member.id} className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl overflow-hidden hover:border-emerald-500/30 transition duration-300 group relative">
                 
                 {isAdmin && (
-                  <button 
-                    onClick={() => handleDelete(member.id)}
-                    className="absolute top-4 right-4 z-10 bg-red-500/80 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition backdrop-blur-md hover:bg-red-500"
-                    title="Delete Member"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                  </button>
+                  <div className="absolute top-4 right-4 z-10 flex gap-2 opacity-0 group-hover:opacity-100 transition">
+                    <button 
+                      onClick={() => handleEditClick(member)}
+                      className="bg-cyan-500/80 text-white p-2 rounded-full backdrop-blur-md hover:bg-cyan-500 shadow-lg"
+                      title="Edit Member"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(member.id)}
+                      className="bg-red-500/80 text-white p-2 rounded-full backdrop-blur-md hover:bg-red-500 shadow-lg"
+                      title="Delete Member"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                  </div>
                 )}
 
                 <div className="h-64 w-full overflow-hidden">
