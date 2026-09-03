@@ -173,7 +173,7 @@ export default function TripDetailsPage() {
               </div>
               <div>
                 <h2 className="text-xl font-bold text-white tracking-wide">Expedition is LIVE!</h2>
-                <p className="text-emerald-200/70 text-sm">Join the tracking network so admins can ensure everyone's safety.</p>
+                <p className="text-emerald-200/70 text-sm">Join the tracking network so admins can ensure everyone&apos;s safety.</p>
               </div>
             </div>
 

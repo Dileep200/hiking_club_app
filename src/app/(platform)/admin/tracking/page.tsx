@@ -7,18 +7,16 @@ import { useRouter } from "next/navigation";
 
 declare global {
   interface Window {
-    google: any;
+    L: any; // Leaflet
   }
 }
-
-const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSy_demo_key_replace_me";
 
 export default function AdminTracking() {
   const router = useRouter();
   const supabase = createClient();
   const mapRef = useRef<HTMLDivElement>(null);
-  const [map, setMap] = useState<any>(null);
   
+  const [map, setMap] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [trips, setTrips] = useState<any[]>([]);
   const [selectedTrip, setSelectedTrip] = useState<any>(null);
@@ -43,30 +41,47 @@ export default function AdminTracking() {
     }
     init();
 
-    if (!window.google) {
+    // Load Leaflet CSS
+    if (!document.getElementById("leaflet-css")) {
+      const link = document.createElement("link");
+      link.id = "leaflet-css";
+      link.rel = "stylesheet";
+      link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+      document.head.appendChild(link);
+    }
+
+    // Load Leaflet JS
+    if (!document.getElementById("leaflet-js")) {
       const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}`;
+      script.id = "leaflet-js";
+      script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
       script.async = true;
-      script.defer = true;
       script.onload = initializeMap;
       document.head.appendChild(script);
-    } else {
+    } else if (window.L) {
       initializeMap();
     }
   }, []);
 
   const initializeMap = () => {
-    if (!mapRef.current || !window.google) return;
-    const newMap = new window.google.maps.Map(mapRef.current, {
-      center: { lat: 17.3850, lng: 78.4867 },
-      zoom: 12,
-      mapTypeId: 'terrain',
-      disableDefaultUI: false,
-    });
+    if (!mapRef.current || !window.L) return;
+    
+    // Prevent re-initialization if map already exists on the container
+    if ((mapRef.current as any)._leaflet_id) return;
+
+    const newMap = window.L.map(mapRef.current, {
+      zoomControl: false // We'll rely on default or add custom if needed
+    }).setView([17.3850, 78.4867], 12);
+    
+    // Add OpenStreetMap tiles (Free, no API key required!)
+    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+      maxZoom: 19
+    }).addTo(newMap);
     
     // Allow admin to click to set destination
-    newMap.addListener('click', (e: any) => {
-      handleMapClick(e.latLng.lat(), e.latLng.lng());
+    newMap.on('click', (e: any) => {
+      handleMapClick(e.latlng.lat, e.latlng.lng);
     });
     
     setMap(newMap);
@@ -90,32 +105,35 @@ export default function AdminTracking() {
     updateDestMarker(lat, lng);
   };
 
+  // Keep track of the active selected trip in a ref so event listeners access the latest state
+  const selectedTripRef = useRef(selectedTrip);
+  useEffect(() => {
+    selectedTripRef.current = selectedTrip;
+  }, [selectedTrip]);
+
   const updateDestMarker = (lat: number, lng: number) => {
-    if (!map || !window.google) return;
+    if (!map || !window.L) return;
     
     if (destMarker) {
-      destMarker.setPosition({ lat, lng });
+      destMarker.setLatLng([lat, lng]);
     } else {
-      const marker = new window.google.maps.Marker({
-        position: { lat, lng },
-        map,
-        icon: {
-          path: window.google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-          scale: 6,
-          fillColor: "#F26D21",
-          fillOpacity: 1,
-          strokeWeight: 2,
-          strokeColor: "#FFF"
-        },
-        title: "Trek Destination"
+      // Create a custom pulsing destination marker using HTML
+      const destIcon = window.L.divIcon({
+        className: 'custom-dest-marker',
+        html: `<div style="width: 24px; height: 24px; background-color: #F26D21; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 15px rgba(242,109,33,0.8); display: flex; align-items: center; justify-content: center;"></div>`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
       });
+
+      const marker = window.L.marker([lat, lng], { icon: destIcon }).addTo(map);
+      marker.bindPopup("<b>Trek Destination</b>");
       setDestMarker(marker);
     }
   };
 
   // Poll participant locations
   useEffect(() => {
-    if (!selectedTrip || !map || !window.google) return;
+    if (!selectedTrip || !map || !window.L) return;
 
     if (selectedTrip.destination_lat && selectedTrip.destination_lng) {
       updateDestMarker(selectedTrip.destination_lat, selectedTrip.destination_lng);
@@ -140,31 +158,20 @@ export default function AdminTracking() {
         // Update markers
         const newMarkers = { ...participantMarkers };
         Object.values(latestPerUser).forEach((pt: any) => {
-          const latLng = new window.google.maps.LatLng(pt.lat, pt.lng);
           if (newMarkers[pt.user_id]) {
-            newMarkers[pt.user_id].setPosition(latLng);
+            newMarkers[pt.user_id].setLatLng([pt.lat, pt.lng]);
           } else {
-            const marker = new window.google.maps.Marker({
-              position: latLng,
-              map,
-              icon: {
-                path: window.google.maps.SymbolPath.CIRCLE,
-                scale: 8,
-                fillColor: "#10b981", // emerald-500
-                fillOpacity: 1,
-                strokeWeight: 2,
-                strokeColor: "#FFF",
-              },
-              title: pt.users?.name || 'Participant'
+            const userIcon = window.L.divIcon({
+              className: 'custom-user-marker',
+              html: `<div style="width: 16px; height: 16px; background-color: #10b981; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 10px rgba(16,185,129,0.8);"></div>`,
+              iconSize: [16, 16],
+              iconAnchor: [8, 8]
             });
+
+            const marker = window.L.marker([pt.lat, pt.lng], { icon: userIcon }).addTo(map);
             
-            const infoWindow = new window.google.maps.InfoWindow({
-              content: `<div style="color:black; font-weight:bold;">${pt.users?.name || 'User'}</div>
-                        <div style="color:#666; font-size:12px;">Last seen: ${new Date(pt.timestamp).toLocaleTimeString()}</div>`
-            });
-            marker.addListener('click', () => {
-              infoWindow.open(map, marker);
-            });
+            const lastSeen = new Date(pt.timestamp).toLocaleTimeString();
+            marker.bindPopup(`<div style="color:black; font-weight:bold;">${pt.users?.name || 'User'}</div><div style="color:#666; font-size:12px;">Last seen: ${lastSeen}</div>`);
             
             newMarkers[pt.user_id] = marker;
           }
@@ -234,11 +241,12 @@ export default function AdminTracking() {
         
         {/* Map Area */}
         <div className="lg:col-span-3 rounded-3xl overflow-hidden border border-white/10 relative shadow-2xl bg-slate-900">
+          {/* We must render Leaflet in a stable DOM element */}
           <div ref={mapRef} className="absolute inset-0 z-0"></div>
           
           {/* Map Overlay info */}
           {selectedTrip && (
-            <div className="absolute top-4 left-4 z-10 bg-black/60 backdrop-blur-md px-4 py-3 rounded-xl border border-white/10 flex items-center gap-4">
+            <div className="absolute top-4 left-4 z-[400] bg-black/80 backdrop-blur-md px-4 py-3 rounded-xl border border-white/20 flex items-center gap-4 shadow-xl pointer-events-none">
               <div className="flex items-center gap-2">
                 <span className="relative flex h-3 w-3">
                   {selectedTrip.tracking_active ? (
@@ -262,10 +270,10 @@ export default function AdminTracking() {
             </div>
           )}
 
-          {!window.google && (
-            <div className="absolute inset-0 z-0 flex items-center justify-center bg-slate-900 text-slate-500">
+          {!window.L && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-900 text-slate-500">
               <Activity className="w-8 h-8 animate-spin mr-3" />
-              Initializing Map...
+              Initializing Free OpenStreetMap...
             </div>
           )}
         </div>
@@ -295,7 +303,7 @@ export default function AdminTracking() {
 
               <div className="flex-1 overflow-y-auto mt-4 pr-2 space-y-3">
                  <div className="text-sm text-slate-400 italic">
-                   Active points will stream automatically when participants share location.
+                   Active points will stream automatically when participants share location. OpenStreetMap is providing the live map tiles for free.
                  </div>
               </div>
             </>

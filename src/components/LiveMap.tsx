@@ -1,17 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Navigation, Battery, Activity, ShieldAlert, Mountain } from "lucide-react";
+import { Navigation, Activity } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
 declare global {
   interface Window {
-    google: any;
+    L: any;
   }
 }
-
-// Using Maps Demo Key as per google-maps-platform skill for prototyping
-const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSy_demo_key_replace_me";
 
 export default function LiveMap() {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -35,15 +32,24 @@ export default function LiveMap() {
     }
     init();
 
-    // Load Google Maps script
-    if (!window.google) {
+    // Load Leaflet CSS
+    if (!document.getElementById("leaflet-css")) {
+      const link = document.createElement("link");
+      link.id = "leaflet-css";
+      link.rel = "stylesheet";
+      link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+      document.head.appendChild(link);
+    }
+
+    // Load Leaflet JS
+    if (!document.getElementById("leaflet-js")) {
       const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}`;
+      script.id = "leaflet-js";
+      script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
       script.async = true;
-      script.defer = true;
       script.onload = initializeMap;
       document.head.appendChild(script);
-    } else {
+    } else if (window.L) {
       initializeMap();
     }
 
@@ -53,30 +59,29 @@ export default function LiveMap() {
   }, []);
 
   const initializeMap = () => {
-    if (!mapRef.current || !window.google) return;
+    if (!mapRef.current || !window.L) return;
     
-    const newMap = new window.google.maps.Map(mapRef.current, {
-      center: location,
-      zoom: 14,
-      mapTypeId: 'terrain',
-      disableDefaultUI: true,
-      zoomControl: true,
-    });
+    if ((mapRef.current as any)._leaflet_id) return;
+
+    const newMap = window.L.map(mapRef.current, {
+      zoomControl: false
+    }).setView([location.lat, location.lng], 14);
+    
+    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+      maxZoom: 19
+    }).addTo(newMap);
+
     setMap(newMap);
 
-    // Initial marker (could use AdvancedMarkerElement but sticking to basic for standard key support)
-    const newMarker = new window.google.maps.Marker({
-      position: location,
-      map: newMap,
-      icon: {
-        path: window.google.maps.SymbolPath.CIRCLE,
-        scale: 10,
-        fillColor: "#F26D21",
-        fillOpacity: 1,
-        strokeWeight: 3,
-        strokeColor: "#FFFFFF",
-      },
+    const destIcon = window.L.divIcon({
+      className: 'custom-live-marker',
+      html: `<div style="width: 20px; height: 20px; background-color: #F26D21; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 15px rgba(242,109,33,0.8);"></div>`,
+      iconSize: [20, 20],
+      iconAnchor: [10, 10]
     });
+
+    const newMarker = window.L.marker([location.lat, location.lng], { icon: destIcon }).addTo(newMap);
     setMarker(newMarker);
   };
 
@@ -110,10 +115,9 @@ export default function LiveMap() {
 
   const updateMapPosition = (lat: number, lng: number) => {
     setLocation({ lat, lng });
-    if (map && marker) {
-      const pos = new window.google.maps.LatLng(lat, lng);
-      marker.setPosition(pos);
-      map.panTo(pos);
+    if (map && marker && window.L) {
+      marker.setLatLng([lat, lng]);
+      map.panTo(new window.L.LatLng(lat, lng));
     }
   };
 
@@ -156,7 +160,7 @@ export default function LiveMap() {
       <div ref={mapRef} className="absolute inset-0 z-0"></div>
       
       {/* Map Header Overlay */}
-      <div className="absolute top-6 left-6 z-10 bg-slate-900/80 backdrop-blur-md px-6 py-4 rounded-2xl flex flex-col md:flex-row gap-6 items-start md:items-center border border-white/10 shadow-xl">
+      <div className="absolute top-6 left-6 z-[400] bg-slate-900/80 backdrop-blur-md px-6 py-4 rounded-2xl flex flex-col md:flex-row gap-6 items-start md:items-center border border-white/10 shadow-xl pointer-events-auto">
         <div>
           <div className="flex items-center gap-3 mb-1">
             <span className="relative flex h-3 w-3">
@@ -173,7 +177,7 @@ export default function LiveMap() {
               {isLive ? "LIVE: Active Expedition" : "Standby Mode"}
             </h2>
           </div>
-          <p className="text-sm text-gray-400">Google Maps Platform</p>
+          <p className="text-sm text-gray-400">OpenStreetMap Live Broadcast</p>
         </div>
 
         {/* Stats */}
@@ -191,7 +195,7 @@ export default function LiveMap() {
 
       {/* Admin Controls */}
       {isAdmin && (
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10">
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-[400] pointer-events-auto">
           <div className="bg-slate-900/80 backdrop-blur-md px-4 py-3 rounded-full flex items-center gap-2 border border-white/10 shadow-xl">
             {!isLive ? (
               <button onClick={startGPS} className="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-full transition-colors flex items-center gap-2">
@@ -206,10 +210,11 @@ export default function LiveMap() {
         </div>
       )}
 
-      {/* Auth Error Overlay if Demo Key is invalid */}
-      {!window.google && (
-        <div className="absolute inset-0 z-0 flex items-center justify-center bg-slate-900 text-slate-500">
-          <p>Initializing Google Maps...</p>
+      {/* Loading Overlay */}
+      {!window.L && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-900 text-slate-500">
+          <Activity className="w-8 h-8 animate-spin mr-3" />
+          <p>Initializing OpenStreetMap...</p>
         </div>
       )}
     </div>
