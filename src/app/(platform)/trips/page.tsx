@@ -12,6 +12,9 @@ interface Trip {
   distance: string;
   difficulty: 'Easy' | 'Moderate' | 'Hard';
   imageUrl: string;
+  spots: number;
+  budget: string;
+  details: string;
 }
 
 export default function TripsPage() {
@@ -54,7 +57,8 @@ export default function TripsPage() {
   
   // form state
   const [newTrip, setNewTrip] = useState<Partial<Trip>>({
-    title: '', date: '', distance: '', difficulty: 'Easy', imageUrl: 'https://images.unsplash.com/photo-1519331379826-f10be5486c6f?q=80&w=800&auto=format&fit=crop'
+    title: '', date: '', distance: '', difficulty: 'Easy', imageUrl: 'https://images.unsplash.com/photo-1519331379826-f10be5486c6f?q=80&w=800&auto=format&fit=crop',
+    spots: 40, budget: '', details: ''
   });
 
   const handleCreateTrip = async (e: React.FormEvent) => {
@@ -66,7 +70,10 @@ export default function TripsPage() {
       date: newTrip.date,
       distance: newTrip.distance,
       difficulty: newTrip.difficulty,
-      image_url: newTrip.imageUrl
+      image_url: newTrip.imageUrl,
+      spots: newTrip.spots,
+      budget: newTrip.budget,
+      details: newTrip.details
     };
 
     const { data, error } = await supabase.from('trips').insert([tripToInsert]).select();
@@ -153,7 +160,21 @@ export default function TripsPage() {
                 
                 <div className="p-6 relative z-20 -mt-16 bg-gradient-to-t from-slate-900 via-slate-900/95 to-transparent pt-12">
                   <h3 className="text-2xl font-bold text-white mb-4 drop-shadow-md">{trip.title}</h3>
-                  <div className="flex flex-col gap-3 text-slate-300">
+                  
+                  {/* Non-admins see reg status here */}
+                  {!isAdmin && (
+                    <div className="mb-4">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${
+                        regStatuses[`trip_reg_${trip.id}`] === 'closed'
+                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                          : 'bg-green-500/20 text-green-300 border-green-500/30'
+                      }`}>
+                        {regStatuses[`trip_reg_${trip.id}`] === 'closed' ? 'Registration Closed' : 'Registration Open'}
+                      </span>
+                    </div>
+                  )}
+                  
+                  <div className="flex flex-col gap-3 text-slate-300 mb-4">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-emerald-500/20 rounded-lg">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -170,7 +191,29 @@ export default function TripsPage() {
                       </div>
                       <span className="font-medium text-[15px]">{trip.distance}</span>
                     </div>
+                    {(trip.spots || trip.budget) && (
+                      <div className="flex items-center gap-4 mt-1 pt-3 border-t border-white/10">
+                        {trip.spots && (
+                          <div className="flex flex-col">
+                            <span className="text-xs text-slate-500 uppercase font-bold tracking-wider">Spots</span>
+                            <span className="font-semibold text-white">{trip.spots} Total</span>
+                          </div>
+                        )}
+                        {trip.budget && (
+                          <div className="flex flex-col border-l border-white/10 pl-4">
+                            <span className="text-xs text-slate-500 uppercase font-bold tracking-wider">Budget</span>
+                            <span className="font-semibold text-white">{trip.budget}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
+                  
+                  {trip.details && (
+                    <div className="mt-4 pt-4 border-t border-white/10">
+                      <p className="text-sm text-slate-400 line-clamp-2">{trip.details}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -229,6 +272,32 @@ export default function TripsPage() {
                     />
                   </div>
 
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-300 mb-2">Total Spots</label>
+                      <input 
+                        type="number" 
+                        required
+                        min="1"
+                        value={newTrip.spots}
+                        onChange={e => setNewTrip({...newTrip, spots: parseInt(e.target.value)})}
+                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all shadow-inner"
+                        placeholder="e.g. 40"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-300 mb-2">Est. Budget / Person</label>
+                      <input 
+                        type="text" 
+                        required
+                        value={newTrip.budget}
+                        onChange={e => setNewTrip({...newTrip, budget: e.target.value})}
+                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all shadow-inner"
+                        placeholder="e.g. ₹1500"
+                      />
+                    </div>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-semibold text-slate-300 mb-2">Difficulty</label>
                     <div className="relative">
@@ -247,6 +316,18 @@ export default function TripsPage() {
                         </svg>
                       </div>
                     </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-300 mb-2">Further Details</label>
+                    <textarea 
+                      required
+                      value={newTrip.details}
+                      onChange={e => setNewTrip({...newTrip, details: e.target.value})}
+                      className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all shadow-inner"
+                      placeholder="Enter the itinerary, required gear, etc."
+                      rows={3}
+                    />
                   </div>
 
                   <div>

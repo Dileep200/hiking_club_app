@@ -216,7 +216,7 @@ export default function Home() {
                       Get ready for our next adventure! This {nextTrip.difficulty.toLowerCase()} trek is perfect for hikers looking to explore nature. Distance is approximately {nextTrip.distance}.
                     </p>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-8">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
                       <div className="flex flex-col">
                         <span className="text-gray-400 text-sm mb-1 flex items-center gap-1"><Calendar className="h-4 w-4"/> Date</span>
                         <span className="text-white font-semibold">
@@ -230,6 +230,10 @@ export default function Home() {
                       <div className="flex flex-col">
                         <span className="text-gray-400 text-sm mb-1 flex items-center gap-1"><Activity className="h-4 w-4"/> Difficulty</span>
                         <span className="text-sunset-amber font-semibold">{nextTrip.difficulty}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-gray-400 text-sm mb-1 flex items-center gap-1"><Users className="h-4 w-4"/> Spots</span>
+                        <span className="text-white font-semibold">{nextTrip.spots || 40} Total</span>
                       </div>
                     </div>
                   </div>
