@@ -241,8 +241,8 @@ export default function FinancePage() {
                       ))}
                     </Pie>
                     <RechartsTooltip 
-                      formatter={(value: number, name: string, props: any) => {
-                        return [`₹${value.toLocaleString('en-IN')}`, "Total Cashflow (In + Out)"];
+                      formatter={(value: any) => {
+                        return [`₹${Number(value).toLocaleString('en-IN')}`, "Total Cashflow"];
                       }}
                       labelFormatter={() => ''}
                       contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '12px' }}
@@ -264,7 +264,7 @@ export default function FinancePage() {
                     <RechartsTooltip 
                       cursor={{fill: '#1e293b'}}
                       contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '12px' }}
-                      formatter={(value: number) => [`₹${value.toLocaleString('en-IN')}`, 'Amount']}
+                      formatter={(value: any) => [`₹${Number(value).toLocaleString('en-IN')}`, 'Amount']}
                     />
                     <Bar dataKey="amount" fill="#f43f5e" radius={[4, 4, 0, 0]} />
                   </BarChart>
