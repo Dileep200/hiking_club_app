@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
 import { useState, useEffect } from "react";
-import { Mountain, Users, Route, Camera, Wallet, ArrowUpRight } from "lucide-react";
+import { Mountain, Users, Route, Camera, Wallet, ArrowUpRight, Trash2 } from "lucide-react";
 import { createClient } from '@/utils/supabase/client';
 
 const DistanceChart = dynamic(() => import("@/components/charts/DashboardCharts").then(mod => mod.DistanceChart), { ssr: false });
@@ -15,11 +15,44 @@ export default function Dashboard() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [difficultyData, setDifficultyData] = useState<any[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  const handleDeleteTx = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this transaction?')) return;
+    const supabase = createClient();
+    const { error } = await supabase.from('transactions').delete().eq('id', id);
+    if (!error) {
+      setTransactions(prev => prev.filter(t => t.id !== id));
+    } else {
+      alert("Error deleting transaction");
+    }
+  };
+
+  const handleClearLedger = async () => {
+    if (!confirm('WARNING: Are you sure you want to completely clear the ENTIRE ledger? This will delete all transactions!')) return;
+    const confirmation = prompt('Type "DELETE ALL" to confirm clearing the ledger:');
+    if (confirmation !== 'DELETE ALL') return;
+    
+    const supabase = createClient();
+    const { error } = await supabase.from('transactions').delete().not('id', 'is', null);
+    if (!error) {
+      setTransactions([]);
+      alert("Ledger completely cleared.");
+    } else {
+      alert("Error clearing ledger: " + error.message);
+    }
+  };
 
   useEffect(() => {
     async function fetchData() {
       try {
         const supabase = createClient();
+        
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const { data: userData } = await supabase.from('users').select('role').eq('id', session.user.id).single();
+          if (userData && userData.role === 'admin') setIsAdmin(true);
+        }
         
         // Fetch full trips data to compute chart metrics
         const { data: tripsData } = await supabase.from('trips').select('*');
@@ -249,7 +282,14 @@ export default function Dashboard() {
             <h3 className="text-xl font-bold text-white flex items-center gap-2">
               <Wallet className="h-5 w-5 text-green-400" /> Recent Transactions (Ledger)
             </h3>
-            <button className="text-sunset-amber hover:text-sunset-orange text-sm font-medium">View Full Ledger</button>
+            <div className="flex gap-4 items-center">
+              {isAdmin && (
+                <button onClick={handleClearLedger} className="text-red-400 hover:text-red-300 text-sm font-medium flex items-center gap-1">
+                  <Trash2 className="w-4 h-4" /> Clear All
+                </button>
+              )}
+              <a href="/finance" className="text-sunset-amber hover:text-sunset-orange text-sm font-medium">View Full Ledger</a>
+            </div>
           </div>
           
           <div className="overflow-x-auto">
@@ -260,27 +300,41 @@ export default function Dashboard() {
                   <th className="pb-3 font-medium">Description</th>
                   <th className="pb-3 font-medium">Category</th>
                   <th className="pb-3 font-medium text-right">Amount</th>
+                  {isAdmin && <th className="pb-3 font-medium text-center">Action</th>}
                 </tr>
               </thead>
               <tbody className="text-gray-300">
-                {transactions.map((tx) => (
-                  <tr key={tx.id} className="border-b border-white/5">
-                    <td className="py-4">{tx.date}</td>
-                    <td className="py-4">{tx.description}</td>
-                    <td className="py-4">
-                      <span className={`px-2 py-1 rounded ${
-                        tx.category === 'Income' ? 'bg-green-500/20 text-green-300' :
-                        tx.category === 'Safety' ? 'bg-red-500/20 text-red-300' :
-                        'bg-blue-500/20 text-blue-300'
-                      }`}>
-                        {tx.category}
-                      </span>
-                    </td>
-                    <td className={`py-4 text-right ${tx.type === 'income' ? 'text-green-400' : 'text-red-400'}`}>
-                      {tx.type === 'income' ? '+' : '-'}₹{Math.abs(tx.amount || 0).toFixed(2)}
-                    </td>
+                {transactions.length === 0 ? (
+                  <tr>
+                    <td colSpan={isAdmin ? 5 : 4} className="py-4 text-center text-gray-500 italic">No transactions found.</td>
                   </tr>
-                ))}
+                ) : (
+                  transactions.map((tx) => (
+                    <tr key={tx.id} className="border-b border-white/5">
+                      <td className="py-4">{tx.date || new Date(tx.created_at).toLocaleDateString()}</td>
+                      <td className="py-4">{tx.description}</td>
+                      <td className="py-4">
+                        <span className={`px-2 py-1 rounded ${
+                          tx.type === 'income' ? 'bg-green-500/20 text-green-300' :
+                          tx.category === 'Safety' ? 'bg-red-500/20 text-red-300' :
+                          'bg-blue-500/20 text-blue-300'
+                        }`}>
+                          {tx.category}
+                        </span>
+                      </td>
+                      <td className={`py-4 text-right ${tx.type === 'income' ? 'text-green-400' : 'text-red-400'}`}>
+                        {tx.type === 'income' ? '+' : '-'}₹{Math.abs(tx.amount || 0).toFixed(2)}
+                      </td>
+                      {isAdmin && (
+                        <td className="py-4 text-center">
+                          <button onClick={() => handleDeleteTx(tx.id)} className="text-gray-500 hover:text-red-400 transition-colors">
+                            <Trash2 className="w-4 h-4 mx-auto" />
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
