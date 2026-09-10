@@ -92,23 +92,25 @@ export default function EventsPage() {
     else alert("Successfully registered!");
   };
 
-  const handleDeleteAnnouncement = async (id: string) => {
+  const handleDeleteAnnouncement = async (id: string | number) => {
     if (!confirm('Are you sure you want to delete this announcement?')) return;
     const { error } = await supabase.from('announcements').delete().eq('id', id);
     if (!error) {
-      setAnnouncements(announcements.filter(a => a.id !== id));
+      setAnnouncements(prev => prev.filter(a => String(a.id) !== String(id)));
     } else {
-      alert("Error deleting announcement");
+      console.error(error);
+      alert("Error deleting announcement: " + (error?.message || "Unknown error"));
     }
   };
 
-  const handleDeleteEvent = async (id: string) => {
+  const handleDeleteEvent = async (id: string | number) => {
     if (!confirm('Are you sure you want to delete this event?')) return;
     const { error } = await supabase.from('events').delete().eq('id', id);
     if (!error) {
-      setEvents(events.filter(e => e.id !== id));
+      setEvents(prev => prev.filter(e => String(e.id) !== String(id)));
     } else {
-      alert("Error deleting event");
+      console.error(error);
+      alert("Error deleting event: " + (error?.message || "Unknown error"));
     }
   };
 
