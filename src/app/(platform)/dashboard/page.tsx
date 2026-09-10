@@ -138,6 +138,31 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
+  const handleDownloadReport = () => {
+    // Show a quick loading state or rely on standard behavior
+    const btn = document.getElementById('download-btn');
+    if (btn) btn.innerText = 'Generating PDF...';
+
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+    script.onload = () => {
+      const element = document.getElementById('dashboard-report-area');
+      const opt = {
+        margin:       [0.5, 0.5, 0.5, 0.5],
+        filename:     `club-dashboard-report-${new Date().toISOString().split('T')[0]}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#0f172a' },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'landscape' }
+      };
+      
+      // @ts-ignore
+      window.html2pdf().set(opt).from(element).save().then(() => {
+        if (btn) btn.innerText = 'Download Report';
+      });
+    };
+    document.body.appendChild(script);
+  };
+
   const getIcon = (name: string) => {
     switch (name) {
       case "Total Trips": return Mountain;
@@ -209,14 +234,14 @@ export default function Dashboard() {
 
   return (
     <main className="min-h-screen pt-24 pb-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div id="dashboard-report-area" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        <div className="flex justify-between items-end mb-10">
+        <div className="flex justify-between items-end mb-10 pb-4 border-b border-white/5">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Club Dashboard</h1>
             <p className="text-gray-400">Overview of Hiking Club activities and stats.</p>
           </div>
-          <button className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors text-sm font-medium">
+          <button id="download-btn" data-html2canvas-ignore onClick={handleDownloadReport} className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors text-sm font-medium">
             Download Report
           </button>
         </div>
