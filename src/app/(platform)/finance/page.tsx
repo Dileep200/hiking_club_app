@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -44,7 +44,10 @@ export default function FinancePage() {
     }
 
     // Fetch ledger
-    const { data } = await supabase.from('transactions').select('*, trips(title)').order('date', { ascending: false }).order('created_at', { ascending: false });
+    const { data } = await supabase.from('transactions')
+      .select('*, trips(title)')
+      .order('date', { ascending: false, nullsFirst: false })
+      .order('created_at', { ascending: false });
     if (data) setLedger(data);
   }
 
@@ -62,7 +65,10 @@ export default function FinancePage() {
   const handleAddTx = async (e: React.FormEvent) => {
     e.preventDefault();
     const amount = parseFloat(newTx.amount);
-    if (isNaN(amount) || !newTx.trip_id) return;
+    if (isNaN(amount) || !newTx.trip_id) {
+      alert("Please ensure amount is valid and a trip is selected.");
+      return;
+    }
 
     const { error } = await supabase.from('transactions').insert([{
       trip_id: newTx.trip_id,
@@ -75,7 +81,8 @@ export default function FinancePage() {
     }]);
 
     if (!error) {
-      fetchData(); // Refresh data to get relations
+      alert("Transaction successfully added!");
+      await fetchData(); // Refresh data to get relations
       setNewTx(prev => ({ ...prev, description: '', amount: '', category: prev.type === 'income' ? 'Income' : '', receipt_url: '' }));
       setShowAddForm(false);
     } else {
