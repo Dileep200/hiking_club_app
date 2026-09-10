@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { useRouter } from 'next/navigation';
 import ImageUpload from '@/components/ImageUpload';
 
 export default function EventsPage() {
+  const router = useRouter();
   const [events, setEvents] = useState<any[]>([]);
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -94,23 +96,33 @@ export default function EventsPage() {
 
   const handleDeleteAnnouncement = async (id: string | number) => {
     if (!confirm('Are you sure you want to delete this announcement?')) return;
-    const { error } = await supabase.from('announcements').delete().eq('id', id);
-    if (!error) {
-      setAnnouncements(prev => prev.filter(a => String(a.id) !== String(id)));
-    } else {
+    
+    const { data, error } = await supabase.from('announcements').delete().eq('id', id).select();
+    
+    if (error) {
       console.error(error);
       alert("Error deleting announcement: " + (error?.message || "Unknown error"));
+    } else if (!data || data.length === 0) {
+      alert("WARNING: The database blocked the deletion! This happens if you forgot to add a 'DELETE' Row Level Security (RLS) policy for the announcements table in Supabase. Please go to Supabase -> Authentication -> Policies and enable DELETE for this table.");
+    } else {
+      setAnnouncements(prev => prev.filter(a => String(a.id) !== String(id)));
+      router.refresh(); // Bust Next.js cache
     }
   };
 
   const handleDeleteEvent = async (id: string | number) => {
     if (!confirm('Are you sure you want to delete this event?')) return;
-    const { error } = await supabase.from('events').delete().eq('id', id);
-    if (!error) {
-      setEvents(prev => prev.filter(e => String(e.id) !== String(id)));
-    } else {
+    
+    const { data, error } = await supabase.from('events').delete().eq('id', id).select();
+    
+    if (error) {
       console.error(error);
       alert("Error deleting event: " + (error?.message || "Unknown error"));
+    } else if (!data || data.length === 0) {
+      alert("WARNING: The database blocked the deletion! You are missing a 'DELETE' RLS policy in Supabase for the events table.");
+    } else {
+      setEvents(prev => prev.filter(e => String(e.id) !== String(id)));
+      router.refresh(); // Bust Next.js cache
     }
   };
 
