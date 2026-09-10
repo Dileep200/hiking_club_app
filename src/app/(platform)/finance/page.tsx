@@ -70,7 +70,7 @@ export default function FinancePage() {
       return;
     }
 
-    const { error } = await supabase.from('transactions').insert([{
+    const { data, error } = await supabase.from('transactions').insert([{
       trip_id: newTx.trip_id,
       date: newTx.date,
       description: newTx.description,
@@ -78,13 +78,33 @@ export default function FinancePage() {
       type: newTx.type,
       category: newTx.category,
       receipt_url: newTx.receipt_url
-    }]);
+    }]).select(); // Ask Supabase to return the inserted row if possible
 
     if (!error) {
       alert("Transaction successfully added!");
-      await fetchData(); // Refresh data to get relations
+      
+      // OPTIMISTIC UI UPDATE: Bypass network caching and show instantly!
+      const selectedTrip = trips.find(t => t.id === newTx.trip_id);
+      const newEntry = {
+        id: data?.[0]?.id || crypto.randomUUID(), // use returned ID or generate one
+        trip_id: newTx.trip_id,
+        date: newTx.date,
+        description: newTx.description,
+        amount: amount,
+        type: newTx.type,
+        category: newTx.category,
+        receipt_url: newTx.receipt_url,
+        trips: selectedTrip ? { title: selectedTrip.title } : null,
+        created_at: new Date().toISOString()
+      };
+      
+      setLedger(prevLedger => [newEntry, ...prevLedger]);
+      
       setNewTx(prev => ({ ...prev, description: '', amount: '', category: prev.type === 'income' ? 'Income' : '', receipt_url: '' }));
       setShowAddForm(false);
+      
+      // Optionally run fetchData in the background just to be safe
+      fetchData(); 
     } else {
       console.error("Supabase Error:", error);
       alert("Error adding transaction: " + (error?.message || "Unknown error"));
