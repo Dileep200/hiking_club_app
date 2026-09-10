@@ -10,6 +10,7 @@ export default function FinancePage() {
   const [trips, setTrips] = useState<any[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [selectedReceipt, setSelectedReceipt] = useState<string | null>(null);
   
   const [newTx, setNewTx] = useState({ 
     trip_id: '',
@@ -343,9 +344,9 @@ export default function FinancePage() {
                       <td className="p-4 text-slate-400 text-sm">{tx.description || '-'}</td>
                       <td className="p-4">
                         {tx.receipt_url ? (
-                          <a href={tx.receipt_url} target="_blank" rel="noreferrer" className="text-emerald-400 hover:text-emerald-300 text-sm font-semibold flex items-center gap-1">
+                          <button onClick={() => setSelectedReceipt(tx.receipt_url)} className="text-emerald-400 hover:text-emerald-300 text-sm font-semibold flex items-center gap-1 cursor-pointer">
                             <Receipt className="w-4 h-4" /> View
-                          </a>
+                          </button>
                         ) : (
                           <span className="text-slate-600 text-sm">-</span>
                         )}
@@ -369,6 +370,27 @@ export default function FinancePage() {
         </div>
 
       </div>
+
+      {/* Receipt Modal */}
+      {selectedReceipt && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setSelectedReceipt(null)}>
+          <div className="relative max-w-4xl max-h-[90vh] w-full bg-slate-900 rounded-2xl border border-white/10 p-2 overflow-hidden flex flex-col shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-4 border-b border-white/10">
+              <h3 className="text-white font-bold flex items-center gap-2"><Receipt className="w-5 h-5 text-emerald-400" /> Receipt Preview</h3>
+              <button onClick={() => setSelectedReceipt(null)} className="text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-full w-8 h-8 flex items-center justify-center transition-colors">
+                ✕
+              </button>
+            </div>
+            <div className="p-4 overflow-auto flex-1 flex justify-center items-center bg-slate-950/50 rounded-b-xl">
+              {selectedReceipt.startsWith('data:application/pdf') ? (
+                <iframe src={selectedReceipt} className="w-full h-[70vh] rounded-lg bg-white" />
+              ) : (
+                <img src={selectedReceipt} alt="Receipt" className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-xl" />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
